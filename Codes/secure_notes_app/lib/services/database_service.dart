@@ -1,10 +1,14 @@
-import 'package:sqflite/sqflite.dart';
+
+import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/note_model.dart';
 
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._init();
   static Database? _database;
+
+  static const String _dbPassword = 'your_secure_password_here_2024';
+
 
   DatabaseService._init();
 
@@ -18,12 +22,18 @@ class DatabaseService {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
+    print(' Opening encrypted database at: $path');
+    print(' Using password-based encryption (SQLCipher)');
+
     return await openDatabase(
       path,
       version: 1,
       onCreate: _createDB,
+      password: _dbPassword,
     );
   }
+  
+ 
 
   Future<void> _createDB(Database db, int version) async {
     const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';

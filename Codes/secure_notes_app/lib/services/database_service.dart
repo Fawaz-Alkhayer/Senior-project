@@ -22,9 +22,7 @@ class DatabaseService {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    print(' Opening encrypted database at: $path');
-    print(' Using password-based encryption (SQLCipher)');
-
+   
     return await openDatabase(
       path,
       version: 1,

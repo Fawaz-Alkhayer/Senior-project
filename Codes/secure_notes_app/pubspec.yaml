@@ -33,11 +33,11 @@ dependencies:
       
   local_auth: ^2.3.0
   local_auth_android: ^1.0.46
+  flutter_secure_storage: ^9.0.0
+  crypto: ^3.0.3
 
-  # sqflite: ^2.3.0 
-  
-  
   path: ^1.8.3
+  # sqflite: ^2.3.0 
   sqflite_sqlcipher: ^3.1.0
 
   # The following adds the Cupertino Icons font to your application.

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/note_model.dart';
 import 'note_detail_screen.dart';
 import '../services/database_service.dart';
+import '../services/app_lock_service.dart';
 
 //imports list end...
 
@@ -48,7 +49,7 @@ class _NotesListScreenState extends State<NotesListScreen> {
           IconButton(
             icon: const Icon(Icons.lock_outline),
             onPressed: () {
-              Navigator.of(context).pop();
+              AppLockService.instance.lock();
             },
             tooltip: 'Lock App',
           ),

@@ -10,7 +10,7 @@ class AppLockService extends ChangeNotifier {
   Timer? _lockTimer;
   
   // Auto-lock after 30 seconds of inactivity
-  static const Duration _lockDuration = Duration(seconds: 120);
+  static const Duration _lockDuration = Duration(seconds: 30);
 
   bool get isLocked => _isLocked;
 

@@ -3,7 +3,7 @@
    University of Bahrain - Senior Project
    
    ## Team Members
-   - Student 1 Name (ID: 20XXXXXX)
+   - Student 1 Name: Fawaz Ayman Alkhayer (ID: 202202748)
    - Student 2 Name (ID: 20XXXXXX)
    - Student 3 Name (ID: 20XXXXXX)
    

@@ -3,6 +3,7 @@ import '../services/app_lock_service.dart';
 import '../services/pin_service.dart';
 import '../services/preferences_service.dart';
 import 'pin_setup_screen.dart';
+import '../widgets/activity_detector.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -188,97 +189,98 @@ class _SettingsScreenState extends State<SettingsScreen> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
+    return ActivityDetector(
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Settings'),
+          backgroundColor: Colors.blue.shade700,
+          foregroundColor: Colors.white,
+        ),
+        body: ListView(
+          children: [
+            // Security Section
+            _buildSectionHeader('SECURITY'),
+            ListTile(
+              leading: const Icon(Icons.timer),
+              title: const Text('Auto-lock Duration'),
+              subtitle: Text(_formatDuration(_lockDuration)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _updateLockDuration,
+            ),
+            if (_isPinSet)
+              ListTile(
+                leading: const Icon(Icons.edit),
+                title: const Text('Change PIN'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: _changePin,
+              ),
+            if (_isPinSet)
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: Colors.red),
+                title: const Text('Remove PIN', style: TextStyle(color: Colors.red)),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: _removePin,
+              ),
+            if (!_isPinSet)
+              ListTile(
+                leading: const Icon(Icons.add_circle_outline),
+                title: const Text('Setup PIN'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () async {
+                  final result = await Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => const PinSetupScreen()),
+                  );
+                  if (result == true) {
+                    _loadSettings();
+                  }
+                },
+              ),
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-        backgroundColor: Colors.blue.shade700,
-        foregroundColor: Colors.white,
-      ),
-      body: ListView(
-        children: [
-          // Security Section
-          _buildSectionHeader('SECURITY'),
-          ListTile(
-            leading: const Icon(Icons.timer),
-            title: const Text('Auto-lock Duration'),
-            subtitle: Text(_formatDuration(_lockDuration)),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: _updateLockDuration,
-          ),
-          if (_isPinSet)
+            const Divider(),
+
+            // Appearance Section
+            _buildSectionHeader('APPEARANCE'),
             ListTile(
-              leading: const Icon(Icons.edit),
-              title: const Text('Change PIN'),
+              leading: const Icon(Icons.palette),
+              title: const Text('Theme'),
+              subtitle: Text(_theme == 'system' 
+                  ? 'System Default' 
+                  : _theme == 'dark' 
+                      ? 'Dark' 
+                      : 'Light'),
               trailing: const Icon(Icons.chevron_right),
-              onTap: _changePin,
-            ),
-          if (_isPinSet)
-            ListTile(
-              leading: const Icon(Icons.delete_outline, color: Colors.red),
-              title: const Text('Remove PIN', style: TextStyle(color: Colors.red)),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: _removePin,
-            ),
-          if (!_isPinSet)
-            ListTile(
-              leading: const Icon(Icons.add_circle_outline),
-              title: const Text('Setup PIN'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () async {
-                final result = await Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => const PinSetupScreen()),
+              onTap: () {
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Theme settings coming in next feature!'),
+                  ),
                 );
-                if (result == true) {
-                  _loadSettings();
-                }
               },
             ),
 
-          const Divider(),
+            const Divider(),
 
-          // Appearance Section
-          _buildSectionHeader('APPEARANCE'),
-          ListTile(
-            leading: const Icon(Icons.palette),
-            title: const Text('Theme'),
-            subtitle: Text(_theme == 'system' 
-                ? 'System Default' 
-                : _theme == 'dark' 
-                    ? 'Dark' 
-                    : 'Light'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Theme settings coming in next feature!'),
-                ),
-              );
-            },
-          ),
-
-          const Divider(),
-
-          // About Section
-          _buildSectionHeader('ABOUT'),
-          const ListTile(
-            leading: Icon(Icons.info_outline),
-            title: Text('App Version'),
-            subtitle: Text('1.0.0'),
-          ),
-          const ListTile(
-            leading: Icon(Icons.people_outline),
-            title: Text('Developers'),
-            subtitle: Text('Your Team Name\nUniversity of Bahrain'), // Update with your names
-          ),
-          ListTile(
-            leading: const Icon(Icons.privacy_tip_outlined),
-            title: const Text('Privacy Policy'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: _showPrivacyPolicy,
-          ),
-        ],
+            // About Section
+            _buildSectionHeader('ABOUT'),
+            const ListTile(
+              leading: Icon(Icons.info_outline),
+              title: Text('App Version'),
+              subtitle: Text('1.0.0'),
+            ),
+            const ListTile(
+              leading: Icon(Icons.people_outline),
+              title: Text('Developers'),
+              subtitle: Text('Your Team Name\nUniversity of Bahrain'), // Update with your names
+            ),
+            ListTile(
+              leading: const Icon(Icons.privacy_tip_outlined),
+              title: const Text('Privacy Policy'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _showPrivacyPolicy,
+            ),
+          ],
+        ),
       ),
     );
   }

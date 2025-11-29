@@ -4,6 +4,7 @@ import 'note_detail_screen.dart';
 import '../services/database_service.dart';
 import '../services/app_lock_service.dart';
 import 'settings_screen.dart';
+import '../widgets/activity_detector.dart';
 
 //imports list end...
 
@@ -208,299 +209,301 @@ void _showSortOptions() {
   
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: isSearching
-            ? TextField(
-                controller: _searchController,
-                autofocus: true,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  hintText: 'Search notes...',
-                  hintStyle: TextStyle(color: Colors.white70),
-                  border: InputBorder.none,
-                ),
-              )
-            : const Text('My Secure Notes'),
-        backgroundColor: Colors.blue.shade700,
-        foregroundColor: Colors.white,
-        actions: [
-          if (isSearching)
-            IconButton(
-              icon: const Icon(Icons.clear),
-              onPressed: _clearSearch,
-              tooltip: 'Clear Search',
-            )
-          else ...[
-            IconButton(
-              icon: const Icon(Icons.search),
-              onPressed: () {
-                setState(() {
-                  isSearching = true;
-                });
-              },
-              tooltip: 'Search',
-            ),
-            IconButton(
-              icon: Icon(
-                showFavoritesOnly ? Icons.star : Icons.star_border,
-                color: showFavoritesOnly ? Colors.amber : Colors.white,
-              ),
-              onPressed: () {
-                setState(() {
-                  showFavoritesOnly = !showFavoritesOnly;
-                });
-                _applySortAndFilter();
-              },
-              tooltip: showFavoritesOnly ? 'Show All Notes' : 'Show Favorites Only',
-            ),
-            IconButton(
-              icon: const Icon(Icons.sort),
-              onPressed: _showSortOptions,
-              tooltip: 'Sort',
-            ),
-            IconButton(
-              icon: const Icon(Icons.settings),
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const SettingsScreen(),
+    return ActivityDetector(
+      child: Scaffold(
+        appBar: AppBar(
+          title: isSearching
+              ? TextField(
+                  controller: _searchController,
+                  autofocus: true,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    hintText: 'Search notes...',
+                    hintStyle: TextStyle(color: Colors.white70),
+                    border: InputBorder.none,
                   ),
-                );
+                )
+              : const Text('My Secure Notes'),
+          backgroundColor: Colors.blue.shade700,
+          foregroundColor: Colors.white,
+          actions: [
+            if (isSearching)
+              IconButton(
+                icon: const Icon(Icons.clear),
+                onPressed: _clearSearch,
+                tooltip: 'Clear Search',
+              )
+            else ...[
+              IconButton(
+                icon: const Icon(Icons.search),
+                onPressed: () {
+                  setState(() {
+                    isSearching = true;
+                  });
+                },
+                tooltip: 'Search',
+              ),
+              IconButton(
+                icon: Icon(
+                  showFavoritesOnly ? Icons.star : Icons.star_border,
+                  color: showFavoritesOnly ? Colors.amber : Colors.white,
+                ),
+                onPressed: () {
+                  setState(() {
+                    showFavoritesOnly = !showFavoritesOnly;
+                  });
+                  _applySortAndFilter();
+                },
+                tooltip: showFavoritesOnly ? 'Show All Notes' : 'Show Favorites Only',
+              ),
+              IconButton(
+                icon: const Icon(Icons.sort),
+                onPressed: _showSortOptions,
+                tooltip: 'Sort',
+              ),
+              IconButton(
+                icon: const Icon(Icons.settings),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const SettingsScreen(),
+                    ),
+                  );
+                },
+                tooltip: 'Settings',
+              ),
+            ],
+            IconButton(
+              icon: const Icon(Icons.lock_outline),
+              onPressed: () {
+                AppLockService.instance.lock();
               },
-              tooltip: 'Settings',
+              tooltip: 'Lock App',
             ),
           ],
-          IconButton(
-            icon: const Icon(Icons.lock_outline),
-            onPressed: () {
-              AppLockService.instance.lock();
-            },
-            tooltip: 'Lock App',
-          ),
-        ],
-      ),
-      
-      body: Column(
-        children: [
-          // Search results count banner
-          if (isSearching && _searchController.text.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: Colors.blue.shade50,
-              child: Row(
-                children: [
-                  Icon(Icons.info_outline, size: 16, color: Colors.blue.shade700),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${filteredNotes.length} note${filteredNotes.length == 1 ? '' : 's'} found',
-                    style: TextStyle(
-                      color: Colors.blue.shade700,
-                      fontSize: 14,
+        ),
+        
+        body: Column(
+          children: [
+            // Search results count banner
+            if (isSearching && _searchController.text.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                color: Colors.blue.shade50,
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, size: 16, color: Colors.blue.shade700),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${filteredNotes.length} note${filteredNotes.length == 1 ? '' : 's'} found',
+                      style: TextStyle(
+                        color: Colors.blue.shade700,
+                        fontSize: 14,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          
-          // Main content area
-          Expanded(
-            child: isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : notes.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.note_add_outlined,
-                              size: 100,
-                              color: Colors.grey.shade400,
-                            ),
-                            const SizedBox(height: 20),
-                            Text(
-                              'No notes yet',
-                              style: TextStyle(
-                                fontSize: 20,
-                                color: Colors.grey.shade600,
+            
+            // Main content area
+            Expanded(
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : notes.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.note_add_outlined,
+                                size: 100,
+                                color: Colors.grey.shade400,
                               ),
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              'Tap + to create your first note',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : Column(
-                        children: [
-                          if (isSearching && filteredNotes.isEmpty)
-                            Expanded(
-                              child: Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.search_off,
-                                      size: 80,
-                                      color: Colors.grey.shade400,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      'No notes found',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'Try a different search term',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey.shade500,
-                                      ),
-                                    ),
-                                  ],
+                              const SizedBox(height: 20),
+                              Text(
+                                'No notes yet',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  color: Colors.grey.shade600,
                                 ),
                               ),
-                            )
-                          else
-                            Expanded(
-                              child: ListView.builder(
-                                padding: const EdgeInsets.all(16),
-                                itemCount: filteredNotes.length,
-                                itemBuilder: (context, index) {
-                                  final note = filteredNotes[index];
-                                  return Card(
-                                    margin: const EdgeInsets.only(bottom: 12),
-                                    elevation: 2,
-                                    child: ListTile(
-                                      contentPadding: const EdgeInsets.all(16),
-                                      leading: IconButton(
-                                        icon: Icon(
-                                          note.isFavorite ? Icons.star : Icons.star_border,
-                                          color: note.isFavorite ? Colors.amber : Colors.grey,
-                                          size: 28,
-                                        ),
-                                        onPressed: () async {
-                                          final updatedNote = note.copyWith(isFavorite: !note.isFavorite);
-                                          await DatabaseService.instance.toggleFavorite(
-                                            note.id!,
-                                            updatedNote.isFavorite,
-                                          );
-                                          _loadNotes();
-                                        },
-                                      ),
-                                      title: Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              note.title,
-                                              style: const TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                          if (note.isFavorite)
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                              decoration: BoxDecoration(
-                                                color: Colors.amber.shade100,
-                                                borderRadius: BorderRadius.circular(12),
-                                              ),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Icon(Icons.star, size: 14, color: Colors.amber.shade700),
-                                                  const SizedBox(width: 4),
-                                                  Text(
-                                                    'Pinned',
-                                                    style: TextStyle(
-                                                      fontSize: 11,
-                                                      color: Colors.amber.shade700,
-                                                      fontWeight: FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                      subtitle: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            note.content,
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                              color: Colors.grey.shade700,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            _formatDate(note.updatedAt),
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey.shade500,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      trailing: Icon(
-                                        Icons.chevron_right,
+                              const SizedBox(height: 10),
+                              Text(
+                                'Tap + to create your first note',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey.shade500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Column(
+                          children: [
+                            if (isSearching && filteredNotes.isEmpty)
+                              Expanded(
+                                child: Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.search_off,
+                                        size: 80,
                                         color: Colors.grey.shade400,
                                       ),
-                                      onTap: () async {
-                                        final result = await Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                            builder: (context) => NoteDetailScreen(note: note),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'No notes found',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Try a different search term',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey.shade500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                            else
+                              Expanded(
+                                child: ListView.builder(
+                                  padding: const EdgeInsets.all(16),
+                                  itemCount: filteredNotes.length,
+                                  itemBuilder: (context, index) {
+                                    final note = filteredNotes[index];
+                                    return Card(
+                                      margin: const EdgeInsets.only(bottom: 12),
+                                      elevation: 2,
+                                      child: ListTile(
+                                        contentPadding: const EdgeInsets.all(16),
+                                        leading: IconButton(
+                                          icon: Icon(
+                                            note.isFavorite ? Icons.star : Icons.star_border,
+                                            color: note.isFavorite ? Colors.amber : Colors.grey,
+                                            size: 28,
                                           ),
-                                        );
+                                          onPressed: () async {
+                                            final updatedNote = note.copyWith(isFavorite: !note.isFavorite);
+                                            await DatabaseService.instance.toggleFavorite(
+                                              note.id!,
+                                              updatedNote.isFavorite,
+                                            );
+                                            _loadNotes();
+                                          },
+                                        ),
+                                        title: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                note.title,
+                                                style: const TextStyle(
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                            if (note.isFavorite)
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.amber.shade100,
+                                                  borderRadius: BorderRadius.circular(12),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    Icon(Icons.star, size: 14, color: Colors.amber.shade700),
+                                                    const SizedBox(width: 4),
+                                                    Text(
+                                                      'Pinned',
+                                                      style: TextStyle(
+                                                        fontSize: 11,
+                                                        color: Colors.amber.shade700,
+                                                        fontWeight: FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                        subtitle: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              note.content,
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                color: Colors.grey.shade700,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              _formatDate(note.updatedAt),
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey.shade500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        trailing: Icon(
+                                          Icons.chevron_right,
+                                          color: Colors.grey.shade400,
+                                        ),
+                                        onTap: () async {
+                                          final result = await Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder: (context) => NoteDetailScreen(note: note),
+                                            ),
+                                          );
 
-                                        if (result != null) {
-                                          if (result == 'delete') {
-                                            await DatabaseService.instance.deleteNote(note.id!);
-                                            _loadNotes();
-                                          } else if (result is Note) {
-                                            await DatabaseService.instance.updateNote(result);
-                                            _loadNotes();
+                                          if (result != null) {
+                                            if (result == 'delete') {
+                                              await DatabaseService.instance.deleteNote(note.id!);
+                                              _loadNotes();
+                                            } else if (result is Note) {
+                                              await DatabaseService.instance.updateNote(result);
+                                              _loadNotes();
+                                            }
                                           }
-                                        }
-                                      },
-                                    ),
-                                  );
-                                },
+                                        },
+                                      ),
+                                    );
+                                  },
+                                ),
                               ),
-                            ),
-                        ],
-                      ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-            final result = await Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => const NoteDetailScreen(),
-              ),
-            );
+                          ],
+                        ),
+            ),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () async {
+              final result = await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const NoteDetailScreen(),
+                ),
+              );
 
-            if (result != null && result is Note) {
-              await DatabaseService.instance.createNote(result);
-              _loadNotes();
-            }
-          },
-       
-        backgroundColor: Colors.blue.shade700,
-        child: const Icon(Icons.add, color: Colors.white),
+              if (result != null && result is Note) {
+                await DatabaseService.instance.createNote(result);
+                _loadNotes();
+              }
+            },
+        
+          backgroundColor: Colors.blue.shade700,
+          child: const Icon(Icons.add, color: Colors.white),
+        ),
       ),
     );
   }

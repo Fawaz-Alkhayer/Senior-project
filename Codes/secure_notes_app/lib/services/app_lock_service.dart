@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 
-
 class AppLockService extends ChangeNotifier {
   static final AppLockService instance = AppLockService._init();
   
@@ -10,8 +9,13 @@ class AppLockService extends ChangeNotifier {
   bool _isLocked = true;
   Timer? _lockTimer;
   Duration _lockDuration = const Duration(seconds: 30);
+  GlobalKey<NavigatorState>? _navigatorKey;
 
   bool get isLocked => _isLocked;
+
+  void setNavigatorKey(GlobalKey<NavigatorState> key) {
+    _navigatorKey = key;
+  }
 
   void unlock() {
     _isLocked = false;
@@ -22,6 +26,11 @@ class AppLockService extends ChangeNotifier {
   void lock() {
     _isLocked = true;
     _lockTimer?.cancel();
+    
+    if (_navigatorKey?.currentState != null) {
+      _navigatorKey!.currentState!.popUntil((route) => route.isFirst);
+    }
+    
     notifyListeners();
   }
 

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../services/app_lock_service.dart';
-import '../screens/login_screen.dart';
 
 class LockWrapper extends StatefulWidget {
   final Widget child;
@@ -30,26 +29,18 @@ class _LockWrapperState extends State<LockWrapper> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused || 
         state == AppLifecycleState.inactive) {
-      // App went to background - lock it
       _lockService.lock();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => _lockService.onUserActivity(),
-      onPanDown: (_) => _lockService.onUserActivity(),
+    return Listener(
+      onPointerDown: (_) => _lockService.onUserActivity(),
+      onPointerMove: (_) => _lockService.onUserActivity(),
+      onPointerUp: (_) => _lockService.onUserActivity(),
       behavior: HitTestBehavior.translucent,
-      child: ListenableBuilder(
-        listenable: _lockService,
-        builder: (context, child) {
-          if (_lockService.isLocked) {
-            return const LoginScreen();
-          }
-          return widget.child;
-        },
-      ),
+      child: widget.child,
     );
   }
 }

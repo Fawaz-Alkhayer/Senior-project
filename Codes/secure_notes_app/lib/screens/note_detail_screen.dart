@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/note_model.dart';
+import '../widgets/activity_detector.dart';
 
 class NoteDetailScreen extends StatefulWidget {
   final Note? note; // null if creating new note
@@ -82,75 +83,77 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
   Widget build(BuildContext context) {
     final isNewNote = widget.note == null;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(isNewNote ? 'New Note' : 'Note Details'),
-        backgroundColor: Colors.blue.shade700,
-        foregroundColor: Colors.white,
-        actions: [
-          if (!isNewNote && !_isEditing)
-            IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: () {
-                setState(() {
-                  _isEditing = true;
-                });
-              },
-              tooltip: 'Edit',
-            ),
-          if (!isNewNote)
-            IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: _deleteNote,
-              tooltip: 'Delete',
-            ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _titleController,
-              enabled: _isEditing,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+    return ActivityDetector(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(isNewNote ? 'New Note' : 'Note Details'),
+          backgroundColor: Colors.blue.shade700,
+          foregroundColor: Colors.white,
+          actions: [
+            if (!isNewNote && !_isEditing)
+              IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: () {
+                  setState(() {
+                    _isEditing = true;
+                  });
+                },
+                tooltip: 'Edit',
               ),
-              decoration: InputDecoration(
-                hintText: 'Note Title',
-                border: _isEditing ? const UnderlineInputBorder() : InputBorder.none,
+            if (!isNewNote)
+              IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: _deleteNote,
+                tooltip: 'Delete',
               ),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: TextField(
-                controller: _contentController,
-                enabled: _isEditing,
-                maxLines: null,
-                expands: true,
-                textAlignVertical: TextAlignVertical.top,
-                style: const TextStyle(fontSize: 16),
-                decoration: InputDecoration(
-                  hintText: 'Start typing your note...',
-                  border: _isEditing ? const OutlineInputBorder() : InputBorder.none,
-                ),
-              ),
-            ),
           ],
         ),
-      ),
-      floatingActionButton: _isEditing
-          ? FloatingActionButton.extended(
-              onPressed: _saveNote,
-              backgroundColor: Colors.blue.shade700,
-              icon: const Icon(Icons.save, color: Colors.white),
-              label: const Text(
-                'Save',
-                style: TextStyle(color: Colors.white),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              TextField(
+                controller: _titleController,
+                enabled: _isEditing,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Note Title',
+                  border: _isEditing ? const UnderlineInputBorder() : InputBorder.none,
+                ),
               ),
-            )
-          : null,
+              const SizedBox(height: 16),
+              Expanded(
+                child: TextField(
+                  controller: _contentController,
+                  enabled: _isEditing,
+                  maxLines: null,
+                  expands: true,
+                  textAlignVertical: TextAlignVertical.top,
+                  style: const TextStyle(fontSize: 16),
+                  decoration: InputDecoration(
+                    hintText: 'Start typing your note...',
+                    border: _isEditing ? const OutlineInputBorder() : InputBorder.none,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        floatingActionButton: _isEditing
+            ? FloatingActionButton.extended(
+                onPressed: _saveNote,
+                backgroundColor: Colors.blue.shade700,
+                icon: const Icon(Icons.save, color: Colors.white),
+                label: const Text(
+                  'Save',
+                  style: TextStyle(color: Colors.white),
+                ),
+              )
+            : null,
+      ),   
     );
   }
 }

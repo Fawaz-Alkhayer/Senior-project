@@ -90,7 +90,10 @@ class _LoginScreenState extends State<LoginScreen> {
     return ActivityDetector(
       child: Scaffold(
     
-        backgroundColor: Colors.blue.shade50,
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFF121212)
+          : Colors.blue.shade50,
+          
         body: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),

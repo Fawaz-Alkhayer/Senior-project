@@ -4,6 +4,7 @@ import '../services/pin_service.dart';
 import '../services/preferences_service.dart';
 import 'pin_setup_screen.dart';
 import '../widgets/activity_detector.dart';
+import '../services/theme_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -249,13 +250,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ? 'Dark' 
                       : 'Light'),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Theme settings coming in next feature!'),
+              onTap: () async {
+                final result = await showDialog<String>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Choose Theme'),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildThemeOption('light', 'Light', Icons.light_mode),
+                        _buildThemeOption('dark', 'Dark', Icons.dark_mode),
+                        _buildThemeOption('system', 'System Default', Icons.settings_suggest),
+                      ],
+                    ),
                   ),
                 );
+
+                if (result != null) {
+                  await ThemeService.instance.setTheme(result);
+                  setState(() {
+                    _theme = result;
+                  });
+                  
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Theme changed to ${_getThemeName(result)}'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                }
               },
             ),
 
@@ -297,5 +322,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildThemeOption(String value, String label, IconData icon) {
+    final isSelected = _theme == value;
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(label),
+      trailing: isSelected ? const Icon(Icons.check, color: Colors.blue) : null,
+      selected: isSelected,
+      onTap: () => Navigator.of(context).pop(value),
+    );
+  }
+
+  String _getThemeName(String theme) {
+    switch (theme) {
+      case 'light':
+        return 'Light';
+      case 'dark':
+        return 'Dark';
+      default:
+        return 'System Default';
+    }
   }
 }

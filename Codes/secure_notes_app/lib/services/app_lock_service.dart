@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-//imports 
+
 
 class AppLockService extends ChangeNotifier {
   static final AppLockService instance = AppLockService._init();

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+//imports 
 
 class AppLockService extends ChangeNotifier {
   static final AppLockService instance = AppLockService._init();
@@ -8,9 +9,7 @@ class AppLockService extends ChangeNotifier {
 
   bool _isLocked = true;
   Timer? _lockTimer;
-  
-  // Auto-lock after 30 seconds of inactivity
-  static const Duration _lockDuration = Duration(seconds: 30);
+  Duration _lockDuration = const Duration(seconds: 30);
 
   bool get isLocked => _isLocked;
 
@@ -39,10 +38,22 @@ class AppLockService extends ChangeNotifier {
     }
   }
 
+  void updateLockDuration(int seconds) {
+    if (seconds == 0) {
+      _lockTimer?.cancel();
+      _lockDuration = const Duration(days: 365);
+    } else {
+      _lockDuration = Duration(seconds: seconds);
+    }
+    
+    if (!_isLocked) {
+      _resetTimer();
+    }
+  }
+
   @override
   void dispose() {
     _lockTimer?.cancel();
     super.dispose();
   }
- 
 }

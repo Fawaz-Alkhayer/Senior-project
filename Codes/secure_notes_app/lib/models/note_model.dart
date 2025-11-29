@@ -4,6 +4,7 @@ class Note {
   final String content;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final bool isFavorite; // NEW FIELD
 
   Note({
     this.id,
@@ -11,6 +12,7 @@ class Note {
     required this.content,
     required this.createdAt,
     required this.updatedAt,
+    this.isFavorite = false, // Default to false
   });
 
   // Convert Note to Map (for database)
@@ -21,6 +23,7 @@ class Note {
       'content': content,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      'isFavorite': isFavorite ? 1 : 0, // SQLite uses 0/1 for boolean
     };
   }
 
@@ -32,6 +35,7 @@ class Note {
       content: map['content'],
       createdAt: DateTime.parse(map['createdAt']),
       updatedAt: DateTime.parse(map['updatedAt']),
+      isFavorite: map['isFavorite'] == 1, // Convert 0/1 to boolean
     );
   }
 
@@ -42,6 +46,7 @@ class Note {
     String? content,
     DateTime? createdAt,
     DateTime? updatedAt,
+    bool? isFavorite,
   }) {
     return Note(
       id: id ?? this.id,
@@ -49,6 +54,7 @@ class Note {
       content: content ?? this.content,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      isFavorite: isFavorite ?? this.isFavorite,
     );
   }
 }

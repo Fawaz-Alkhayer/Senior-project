@@ -34,19 +34,22 @@ class DatabaseService {
  
 
   Future<void> _createDB(Database db, int version) async {
-    const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
-    const textType = 'TEXT NOT NULL';
+  const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
+  const textType = 'TEXT NOT NULL';
+  const intType = 'INTEGER NOT NULL DEFAULT 0';
 
-    await db.execute('''
-      CREATE TABLE notes (
-        id $idType,
-        title $textType,
-        content $textType,
-        createdAt $textType,
-        updatedAt $textType
-      )
-    ''');
+  await db.execute('''
+    CREATE TABLE notes (
+      id $idType,
+      title $textType,
+      content $textType,
+      createdAt $textType,
+      updatedAt $textType,
+      isFavorite $intType
+    )
+  ''');
   }
+ 
 
   // Create a new note
   Future<Note> createNote(Note note) async {
@@ -74,10 +77,13 @@ class DatabaseService {
   // Read all notes
   Future<List<Note>> readAllNotes() async {
     final db = await instance.database;
-    const orderBy = 'updatedAt DESC';
+    // Order by favorite first (DESC = 1 before 0), then by updated date
+    const orderBy = 'isFavorite DESC, updatedAt DESC';
     final result = await db.query('notes', orderBy: orderBy);
+    print('📚 Read ${result.length} notes from database');
     return result.map((json) => Note.fromMap(json)).toList();
   }
+  
 
   // Update a note
   Future<int> updateNote(Note note) async {
@@ -104,5 +110,17 @@ class DatabaseService {
   Future<void> close() async {
     final db = await instance.database;
     db.close();
+  }
+
+  // Toggle favorite status
+  Future<int> toggleFavorite(int id, bool isFavorite) async {
+    final db = await instance.database;
+    print('⭐ Toggling favorite for note ID: $id to $isFavorite');
+    return db.update(
+      'notes',
+      {'isFavorite': isFavorite ? 1 : 0},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 }

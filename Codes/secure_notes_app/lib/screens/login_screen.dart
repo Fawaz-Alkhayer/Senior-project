@@ -92,8 +92,8 @@ class _LoginScreenState extends State<LoginScreen> {
     
         backgroundColor: Theme.of(context).brightness == Brightness.dark
           ? const Color(0xFF121212)
-          : Colors.blue.shade50,
-          
+          : const Color(0xFFE3F2FD),
+
         body: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
@@ -101,26 +101,26 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  Icons.lock_outline,
-                  size: 100,
-                  color: Colors.blue.shade700,
-                ),
-                const SizedBox(height: 30),
-                Text(
-                  'Secure Notes',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue.shade900,
+                    Icons.lock_outline,
+                    size: 100,
+                    color: const Color(0xFF1A237E), // Navy blue
                   ),
-                ),
+                  const SizedBox(height: 30),
+                  const Text(
+                    'SafeNotes',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A237E), // Navy blue
+                    ),
+                  ),
                 const SizedBox(height: 50),
                 GestureDetector(
                   onTap: _isAuthenticating ? null : _authenticate,
                   child: Container(
                     padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade700,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF00BCD4), // Cyan
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -134,9 +134,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 Text(
                   _message,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 16,
-                    color: Colors.blue.shade900,
+                    color: Color(0xFF1A237E), // Navy blue
                   ),
                 ),
                 const SizedBox(height: 40),
@@ -168,8 +168,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     icon: const Icon(Icons.pin),
                     label: const Text('Use PIN Instead'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.blue.shade700,
-                      side: BorderSide(color: Colors.blue.shade700),
+                      foregroundColor: const Color(0xFF0D47A1), // Dark blue
+                      side: const BorderSide(color: Color(0xFF0D47A1)),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 32,
                         vertical: 12,

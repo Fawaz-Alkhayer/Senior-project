@@ -4,7 +4,8 @@ class Note {
   final String content;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final bool isFavorite; // NEW FIELD
+  final bool isFavorite;
+  final String? imagePath; // New field for image
 
   Note({
     this.id,
@@ -12,10 +13,10 @@ class Note {
     required this.content,
     required this.createdAt,
     required this.updatedAt,
-    this.isFavorite = false, // Default to false
+    this.isFavorite = false,
+    this.imagePath,
   });
 
-  // Convert Note to Map (for database)
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -23,11 +24,11 @@ class Note {
       'content': content,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
-      'isFavorite': isFavorite ? 1 : 0, // SQLite uses 0/1 for boolean
+      'isFavorite': isFavorite ? 1 : 0,
+      'imagePath': imagePath,
     };
   }
 
-  // Create Note from Map (from database)
   factory Note.fromMap(Map<String, dynamic> map) {
     return Note(
       id: map['id'],
@@ -35,11 +36,11 @@ class Note {
       content: map['content'],
       createdAt: DateTime.parse(map['createdAt']),
       updatedAt: DateTime.parse(map['updatedAt']),
-      isFavorite: map['isFavorite'] == 1, // Convert 0/1 to boolean
+      isFavorite: map['isFavorite'] == 1,
+      imagePath: map['imagePath'],
     );
   }
 
-  // Create a copy of Note with updated fields
   Note copyWith({
     int? id,
     String? title,
@@ -47,6 +48,7 @@ class Note {
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isFavorite,
+    String? imagePath,
   }) {
     return Note(
       id: id ?? this.id,
@@ -55,6 +57,7 @@ class Note {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isFavorite: isFavorite ?? this.isFavorite,
+      imagePath: imagePath ?? this.imagePath,
     );
   }
 }

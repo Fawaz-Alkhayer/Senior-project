@@ -34,21 +34,23 @@ class DatabaseService {
  
 
   Future<void> _createDB(Database db, int version) async {
-  const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
-  const textType = 'TEXT NOT NULL';
-  const intType = 'INTEGER NOT NULL DEFAULT 0';
+    const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
+    const textType = 'TEXT NOT NULL';
+    const textTypeNull = 'TEXT';
+    const intType = 'INTEGER NOT NULL DEFAULT 0';
 
-  await db.execute('''
-    CREATE TABLE notes (
-      id $idType,
-      title $textType,
-      content $textType,
-      createdAt $textType,
-      updatedAt $textType,
-      isFavorite $intType
-    )
-  ''');
-  }
+    await db.execute('''
+      CREATE TABLE notes (
+        id $idType,
+        title $textType,
+        content $textType,
+        createdAt $textType,
+        updatedAt $textType,
+        isFavorite $intType,
+        imagePath $textTypeNull
+      )
+    ''');
+ }
  
 
   // Create a new note

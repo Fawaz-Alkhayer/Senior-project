@@ -8,7 +8,7 @@ class AppLockService extends ChangeNotifier {
 
   bool _isLocked = true;
   Timer? _lockTimer;
-  Duration _lockDuration = const Duration(seconds: 30);
+  Duration _lockDuration = const Duration(seconds: 120);
   GlobalKey<NavigatorState>? _navigatorKey;
 
   bool get isLocked => _isLocked;

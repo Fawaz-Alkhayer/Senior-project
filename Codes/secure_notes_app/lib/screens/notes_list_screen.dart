@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import '../models/note_model.dart';
-import 'note_detail_screen.dart';
 import '../services/database_service.dart';
-import '../services/app_lock_service.dart';
 import 'settings_screen.dart';
 import '../widgets/activity_detector.dart';
+import 'rich_note_editor_screen.dart';
+
 
 //imports list end...
 
@@ -137,70 +137,142 @@ void _showSortOptions() {
   showModalBottomSheet(
     context: context,
     builder: (context) {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              'Sort By',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.blue.shade900,
+      return SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.star_rounded, color: Color(0xFF00BCD4)), // Cyan star
+                  const SizedBox(width: 8),
+                  Text(
+                    'Sort & Filter',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : const Color(0xFF1A237E),
+                  ),
+                 ),
+                ]
               ),
             ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.access_time),
-            title: const Text('Newest First'),
-            trailing: sortBy == 'date_desc' ? const Icon(Icons.check, color: Colors.blue) : null,
-            onTap: () {
-              setState(() {
-                sortBy = 'date_desc';
-              });
-              _applySortAndFilter();
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.access_time),
-            title: const Text('Oldest First'),
-            trailing: sortBy == 'date_asc' ? const Icon(Icons.check, color: Colors.blue) : null,
-            onTap: () {
-              setState(() {
-                sortBy = 'date_asc';
-              });
-              _applySortAndFilter();
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.sort_by_alpha),
-            title: const Text('Title (A-Z)'),
-            trailing: sortBy == 'title_asc' ? const Icon(Icons.check, color: Colors.blue) : null,
-            onTap: () {
-              setState(() {
-                sortBy = 'title_asc';
-              });
-              _applySortAndFilter();
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.sort_by_alpha),
-            title: const Text('Title (Z-A)'),
-            trailing: sortBy == 'title_desc' ? const Icon(Icons.check, color: Colors.blue) : null,
-            onTap: () {
-              setState(() {
-                sortBy = 'title_desc';
-              });
-              _applySortAndFilter();
-              Navigator.pop(context);
-            },
-          ),
-          const SizedBox(height: 16),
-        ],
+
+            const Divider(),
+            
+            // Filter Section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Text(
+                'FILTER',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ),
+            
+            ListTile(
+              leading: const Icon(Icons.list),
+              title: const Text('All Notes'),
+              trailing: !showFavoritesOnly ? const Icon(Icons.check, color: Colors.blue) : null,
+              onTap: () {
+                setState(() {
+                  showFavoritesOnly = false;
+                });
+                _applySortAndFilter();
+                Navigator.pop(context);
+              },
+            ),
+            
+            ListTile(
+              leading: const Icon(Icons.star, color: Colors.amber),
+              title: const Text('Favorites Only'),
+              trailing: showFavoritesOnly ? const Icon(Icons.check, color: Colors.blue) : null,
+              onTap: () {
+                setState(() {
+                  showFavoritesOnly = true;
+                });
+                _applySortAndFilter();
+                Navigator.pop(context);
+              },
+            ),
+            
+            const Divider(),
+            
+            // Sort Section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Text(
+                'SORT BY',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ),
+            
+            ListTile(
+              leading: const Icon(Icons.access_time),
+              title: const Text('Newest First'),
+              trailing: sortBy == 'date_desc' ? const Icon(Icons.check, color: Colors.blue) : null,
+              onTap: () {
+                setState(() {
+                  sortBy = 'date_desc';
+                });
+                _applySortAndFilter();
+                Navigator.pop(context);
+              },
+            ),
+            
+            ListTile(
+              leading: const Icon(Icons.access_time),
+              title: const Text('Oldest First'),
+              trailing: sortBy == 'date_asc' ? const Icon(Icons.check, color: Colors.blue) : null,
+              onTap: () {
+                setState(() {
+                  sortBy = 'date_asc';
+                });
+                _applySortAndFilter();
+                Navigator.pop(context);
+              },
+            ),
+            
+            ListTile(
+              leading: const Icon(Icons.sort_by_alpha),
+              title: const Text('Title (A-Z)'),
+              trailing: sortBy == 'title_asc' ? const Icon(Icons.check, color: Colors.blue) : null,
+              onTap: () {
+                setState(() {
+                  sortBy = 'title_asc';
+                });
+                _applySortAndFilter();
+                Navigator.pop(context);
+              },
+            ),
+            
+            ListTile(
+              leading: const Icon(Icons.sort_by_alpha),
+              title: const Text('Title (Z-A)'),
+              trailing: sortBy == 'title_desc' ? const Icon(Icons.check, color: Colors.blue) : null,
+              onTap: () {
+                setState(() {
+                  sortBy = 'title_desc';
+                });
+                _applySortAndFilter();
+                Navigator.pop(context);
+              },
+            ),
+            
+            const SizedBox(height:16),
+          ],
+        ),
       );
     },
   );
@@ -212,6 +284,15 @@ void _showSortOptions() {
     return ActivityDetector(
       child: Scaffold(
         appBar: AppBar(
+          leading: IconButton(
+            icon: const Text('☰', style: TextStyle(fontSize: 24, color: Colors.white)),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Categories coming soon!')),
+              );
+            },
+            tooltip: 'Menu',
+          ),
           title: isSearching
               ? TextField(
                   controller: _searchController,
@@ -223,19 +304,19 @@ void _showSortOptions() {
                     border: InputBorder.none,
                   ),
                 )
-              : const Text('My Secure Notes'),
-          backgroundColor: Colors.blue.shade700,
+              : const Text('SafeNotes'),
+          backgroundColor: const Color(0xFF1A237E),
           foregroundColor: Colors.white,
           actions: [
             if (isSearching)
               IconButton(
-                icon: const Icon(Icons.clear),
+                icon: const Text('✖️', style: TextStyle(fontSize: 20)),
                 onPressed: _clearSearch,
                 tooltip: 'Clear Search',
               )
             else ...[
               IconButton(
-                icon: const Icon(Icons.search),
+                icon: const Text('🔍', style: TextStyle(fontSize: 20)),
                 onPressed: () {
                   setState(() {
                     isSearching = true;
@@ -244,25 +325,12 @@ void _showSortOptions() {
                 tooltip: 'Search',
               ),
               IconButton(
-                icon: Icon(
-                  showFavoritesOnly ? Icons.star : Icons.star_border,
-                  color: showFavoritesOnly ? Colors.amber : Colors.white,
-                ),
-                onPressed: () {
-                  setState(() {
-                    showFavoritesOnly = !showFavoritesOnly;
-                  });
-                  _applySortAndFilter();
-                },
-                tooltip: showFavoritesOnly ? 'Show All Notes' : 'Show Favorites Only',
-              ),
-              IconButton(
-                icon: const Icon(Icons.sort),
+                icon: const Text('⭐', style: TextStyle(fontSize: 20)),
                 onPressed: _showSortOptions,
-                tooltip: 'Sort',
+                tooltip: 'Sort & Filter',
               ),
               IconButton(
-                icon: const Icon(Icons.settings),
+                icon: const Text('⚙️', style: TextStyle(fontSize: 20)),
                 onPressed: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
@@ -273,13 +341,6 @@ void _showSortOptions() {
                 tooltip: 'Settings',
               ),
             ],
-            IconButton(
-              icon: const Icon(Icons.lock_outline),
-              onPressed: () {
-                AppLockService.instance.lock();
-              },
-              tooltip: 'Lock App',
-            ),
           ],
         ),
         
@@ -410,7 +471,7 @@ void _showSortOptions() {
                                               ),
                                             ),
                                             if (note.isFavorite)
-                                              Container(
+                                                Container(
                                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                                 decoration: BoxDecoration(
                                                   color: Colors.amber.shade100,
@@ -463,9 +524,10 @@ void _showSortOptions() {
                                         onTap: () async {
                                           final result = await Navigator.of(context).push(
                                             MaterialPageRoute(
-                                              builder: (context) => NoteDetailScreen(note: note),
+                                              builder: (context) => RichNoteEditorScreen(note: note),
                                             ),
                                           );
+                                          
 
                                           if (result != null) {
                                             if (result == 'delete') {
@@ -491,7 +553,7 @@ void _showSortOptions() {
           onPressed: () async {
               final result = await Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => const NoteDetailScreen(),
+                  builder: (context) => RichNoteEditorScreen(),
                 ),
               );
 

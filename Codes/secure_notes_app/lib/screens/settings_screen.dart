@@ -155,7 +155,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: const Text('Privacy Policy'),
         content: const SingleChildScrollView(
           child: Text(
-            'Secure Notes Privacy Policy\n\n'
+            'SafeNotes Privacy Policy\n\n'
             '1. Data Storage\n'
             'All your notes are stored locally on your device using encrypted storage (SQLCipher). '
             'We do not collect, transmit, or store your data on any external servers.\n\n'
@@ -201,6 +201,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             // Security Section
             _buildSectionHeader('SECURITY'),
+
+            ListTile(
+              leading: const Icon(Icons.lock, color: Colors.orange),
+              title: const Text('Lock App Now'),
+              subtitle: const Text('Immediately lock the app'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                AppLockService.instance.lock();
+              },
+            ),
+
             ListTile(
               leading: const Icon(Icons.timer),
               title: const Text('Auto-lock Duration'),
@@ -238,7 +249,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
 
             const Divider(),
-
+           
             // Appearance Section
             _buildSectionHeader('APPEARANCE'),
             ListTile(

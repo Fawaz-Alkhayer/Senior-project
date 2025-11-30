@@ -73,7 +73,7 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Setup Backup PIN'),
-          backgroundColor: Colors.blue.shade700,
+          backgroundColor: const Color(0xFF1A237E),
           foregroundColor: Colors.white,
         ),
         body: Padding(
@@ -85,7 +85,7 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
               Icon(
                 Icons.pin_outlined,
                 size: 80,
-                color: Colors.blue.shade700,
+                color: Color(0xFF0D47A1),
               ),
               const SizedBox(height: 30),
               const Text(
@@ -151,7 +151,7 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
               ElevatedButton(
                 onPressed: _setupPin,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue.shade700,
+                  backgroundColor: const Color(0xFF00BCD4),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(

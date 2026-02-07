@@ -20,6 +20,12 @@ class _RichNoteEditorScreenState extends State<RichNoteEditorScreen> {
   String? _imagePath;
   bool _hasUnsavedChanges = false;
 
+  // Simple formatting state
+  bool _isBold = false;
+  bool _isItalic = false;
+  bool _isUnderline = false;
+  double _fontSize = 16.0;
+
   @override
   void initState() {
     super.initState();
@@ -154,13 +160,14 @@ class _RichNoteEditorScreenState extends State<RichNoteEditorScreen> {
   @override
   Widget build(BuildContext context) {
     final isNewNote = widget.note == null;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return WillPopScope(
       onWillPop: _onWillPop,
       child: ActivityDetector(
         child: Scaffold(
           appBar: AppBar(
-            title: Text(isNewNote ? 'New Note' : widget.note!.title),
+            title: Text(isNewNote ? 'New Note' : 'Edit Note'),
             actions: [
               if (!isNewNote && !_isEditing)
                 IconButton(
@@ -186,13 +193,12 @@ class _RichNoteEditorScreenState extends State<RichNoteEditorScreen> {
                 ),
             ],
           ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Title field
-                TextField(
+          body: Column(
+            children: [
+              // Title field
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: TextField(
                   controller: _titleController,
                   enabled: _isEditing || isNewNote,
                   style: const TextStyle(
@@ -204,36 +210,125 @@ class _RichNoteEditorScreenState extends State<RichNoteEditorScreen> {
                     border: _isEditing || isNewNote 
                         ? const UnderlineInputBorder() 
                         : InputBorder.none,
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                ),
+              ),
+
+              // Simple Formatting Toolbar (when editing)
+              if (_isEditing || isNewNote)
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E1E1E) : Colors.grey.shade100,
+                    border: Border(
+                      bottom: BorderSide(color: Colors.grey.shade300, width: 1),
+                    ),
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Row(
+                      children: [
+                        // Bold
+                        IconButton(
+                          icon: const Icon(Icons.format_bold),
+                          onPressed: () {
+                            setState(() {
+                              _isBold = !_isBold;
+                            });
+                          },
+                          color: _isBold ? Theme.of(context).colorScheme.primary : null,
+                          tooltip: 'Bold',
+                        ),
+                        // Italic
+                        IconButton(
+                          icon: const Icon(Icons.format_italic),
+                          onPressed: () {
+                            setState(() {
+                              _isItalic = !_isItalic;
+                            });
+                          },
+                          color: _isItalic ? Theme.of(context).colorScheme.primary : null,
+                          tooltip: 'Italic',
+                        ),
+                        // Underline
+                        IconButton(
+                          icon: const Icon(Icons.format_underline),
+                          onPressed: () {
+                            setState(() {
+                              _isUnderline = !_isUnderline;
+                            });
+                          },
+                          color: _isUnderline ? Theme.of(context).colorScheme.primary : null,
+                          tooltip: 'Underline',
+                        ),
+                        const VerticalDivider(),
+                        // Font Size -
+                        IconButton(
+                          icon: const Icon(Icons.remove),
+                          onPressed: () {
+                            if (_fontSize > 12) {
+                              setState(() {
+                                _fontSize -= 2;
+                              });
+                            }
+                          },
+                          tooltip: 'Decrease Size',
+                        ),
+                        Text('${_fontSize.toInt()}'),
+                        // Font Size +
+                        IconButton(
+                          icon: const Icon(Icons.add),
+                          onPressed: () {
+                            if (_fontSize < 32) {
+                              setState(() {
+                                _fontSize += 2;
+                              });
+                            }
+                          },
+                          tooltip: 'Increase Size',
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
 
-                // Content field
-                TextField(
-                  controller: _contentController,
-                  enabled: _isEditing || isNewNote,
-                  maxLines: null,
-                  style: const TextStyle(fontSize: 16),
-                  decoration: InputDecoration(
-                    hintText: 'Start typing...',
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
+              // Content Editor
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: TextField(
+                    controller: _contentController,
+                    enabled: _isEditing || isNewNote,
+                    maxLines: null,
+                    expands: true,
+                    textAlignVertical: TextAlignVertical.top,
+                    style: TextStyle(
+                      fontSize: _fontSize,
+                      fontWeight: _isBold ? FontWeight.bold : FontWeight.normal,
+                      fontStyle: _isItalic ? FontStyle.italic : FontStyle.normal,
+                      decoration: _isUnderline ? TextDecoration.underline : TextDecoration.none,
+                    ),
+                    decoration: const InputDecoration(
+                      hintText: 'Start typing...',
+                      border: InputBorder.none,
+                    ),
                   ),
                 ),
+              ),
 
-                // Image preview
-                if (_imagePath != null) ...[
-                  const SizedBox(height: 24),
-                  Stack(
+              // Image preview
+              if (_imagePath != null)
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Stack(
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: Image.file(
                           File(_imagePath!),
                           width: double.infinity,
+                          height: 200,
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -256,12 +351,13 @@ class _RichNoteEditorScreenState extends State<RichNoteEditorScreen> {
                         ),
                     ],
                   ),
-                ],
+                ),
 
-                // Add image button (when editing)
-                if ((_isEditing || isNewNote) && _imagePath == null) ...[
-                  const SizedBox(height: 24),
-                  OutlinedButton.icon(
+              // Add image button
+              if ((_isEditing || isNewNote) && _imagePath == null)
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: OutlinedButton.icon(
                     onPressed: _pickImage,
                     icon: const Icon(Icons.image_outlined),
                     label: const Text('Add Image'),
@@ -272,9 +368,8 @@ class _RichNoteEditorScreenState extends State<RichNoteEditorScreen> {
                       ),
                     ),
                   ),
-                ],
-              ],
-            ),
+                ),
+            ],
           ),
         ),
       ),

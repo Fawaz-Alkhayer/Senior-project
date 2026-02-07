@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:image_picker/image_picker.dart';
 import '../models/note_model.dart';
 import '../widgets/activity_detector.dart';
@@ -16,9 +15,10 @@ class RichNoteEditorScreen extends StatefulWidget {
 
 class _RichNoteEditorScreenState extends State<RichNoteEditorScreen> {
   final TextEditingController _titleController = TextEditingController();
-  late quill.QuillController _quillController;
+  final TextEditingController _contentController = TextEditingController();
   bool _isEditing = false;
   String? _imagePath;
+  bool _hasUnsavedChanges = false;
 
   @override
   void initState() {
@@ -26,23 +26,30 @@ class _RichNoteEditorScreenState extends State<RichNoteEditorScreen> {
     
     if (widget.note != null) {
       _titleController.text = widget.note!.title;
+      _contentController.text = widget.note!.content;
       _imagePath = widget.note!.imagePath;
-      
-      // Load existing content
-      _quillController = quill.QuillController(
-        document: quill.Document()..insert(0, widget.note!.content),
-        selection: const TextSelection.collapsed(offset: 0),
-      );
     } else {
-      _quillController = quill.QuillController.basic();
       _isEditing = true;
+    }
+
+    _titleController.addListener(_onTextChanged);
+    _contentController.addListener(_onTextChanged);
+  }
+
+  void _onTextChanged() {
+    if (!_hasUnsavedChanges) {
+      setState(() {
+        _hasUnsavedChanges = true;
+      });
     }
   }
 
   @override
   void dispose() {
+    _titleController.removeListener(_onTextChanged);
+    _contentController.removeListener(_onTextChanged);
     _titleController.dispose();
-    _quillController.dispose();
+    _contentController.dispose();
     super.dispose();
   }
 
@@ -53,8 +60,40 @@ class _RichNoteEditorScreenState extends State<RichNoteEditorScreen> {
     if (image != null) {
       setState(() {
         _imagePath = image.path;
+        _hasUnsavedChanges = true;
       });
     }
+  }
+
+  Future<bool> _onWillPop() async {
+    if (!_hasUnsavedChanges) {
+      return true;
+    }
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Save changes?'),
+        content: const Text('You have unsaved changes. Do you want to save them?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Discard'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true) {
+      await _saveNote();
+      return false;
+    }
+
+    return true;
   }
 
   Future<void> _saveNote() async {
@@ -67,18 +106,22 @@ class _RichNoteEditorScreenState extends State<RichNoteEditorScreen> {
       return;
     }
 
-    final plainText = _quillController.document.toPlainText();
+    final content = _contentController.text.trim();
     final now = DateTime.now();
 
     final note = Note(
       id: widget.note?.id,
       title: title,
-      content: plainText,
+      content: content,
       createdAt: widget.note?.createdAt ?? now,
       updatedAt: now,
       isFavorite: widget.note?.isFavorite ?? false,
       imagePath: _imagePath,
     );
+
+    setState(() {
+      _hasUnsavedChanges = false;
+    });
 
     Navigator.of(context).pop(note);
   }
@@ -112,145 +155,128 @@ class _RichNoteEditorScreenState extends State<RichNoteEditorScreen> {
   Widget build(BuildContext context) {
     final isNewNote = widget.note == null;
 
-    return ActivityDetector(
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(isNewNote ? 'New Note' : 'Note'),
-          backgroundColor: const Color(0xFF1A237E),
-          foregroundColor: Colors.white,
-          actions: [
-            if (!isNewNote && !_isEditing)
-              IconButton(
-                icon: const Icon(Icons.edit),
-                onPressed: () {
-                  setState(() {
-                    _isEditing = true;
-                    _quillController.readOnly = false;
-                  });
-                },
-                tooltip: 'Edit',
-              ),
-            if (!isNewNote)
-              IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: _deleteNote,
-                tooltip: 'Delete',
-              ),
-          ],
-        ),
-        body: Column(
-          children: [
-            // Title field
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: TextField(
-                controller: _titleController,
-                enabled: _isEditing,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: ActivityDetector(
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text(isNewNote ? 'New Note' : widget.note!.title),
+            actions: [
+              if (!isNewNote && !_isEditing)
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined),
+                  onPressed: () {
+                    setState(() {
+                      _isEditing = true;
+                    });
+                  },
+                  tooltip: 'Edit',
                 ),
-                decoration: InputDecoration(
-                  hintText: 'Note Title',
-                  border: _isEditing ? const UnderlineInputBorder() : InputBorder.none,
+              if (!isNewNote)
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: _deleteNote,
+                  tooltip: 'Delete',
                 ),
-              ),
-            ),
-
-            // Formatting toolbar (only when editing)
-            if (_isEditing)
-              Container(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? const Color(0xFF1E1E1E)
-                    : Colors.grey.shade100,
-                child: quill.QuillSimpleToolbar(
-                  controller: _quillController,
-                  config: const quill.QuillSimpleToolbarConfig(
-                    showAlignmentButtons: false,
-                    showSearchButton: false,
-                    showSubscript: false,
-                    showSuperscript: false,
-                    showInlineCode: false,
-                    showCodeBlock: false,
-                    showQuote: false,
-                    showIndent: false,
-                    showLink: false,
-                    showDividers: true,
+              if (_isEditing || isNewNote)
+                IconButton(
+                  icon: const Icon(Icons.check),
+                  onPressed: _saveNote,
+                  tooltip: 'Save',
+                ),
+            ],
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title field
+                TextField(
+                  controller: _titleController,
+                  enabled: _isEditing || isNewNote,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
                   ),
-                ),
-              ),
-
-            // Editor
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: quill.QuillEditor.basic(
-                  controller: _quillController,
-                  config: quill.QuillEditorConfig(
-                    placeholder: 'Start typing...',
-                    padding: EdgeInsets.zero,
-                  ),
-                ),
-              ),
-            ),
-
-            // Image preview
-            if (_imagePath != null)
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Stack(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.file(
-                        File(_imagePath!),
-                        height: 200,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      ),
+                  decoration: InputDecoration(
+                    hintText: 'Title',
+                    border: _isEditing || isNewNote 
+                        ? const UnderlineInputBorder() 
+                        : InputBorder.none,
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.grey.shade300),
                     ),
-                    if (_isEditing)
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: IconButton(
-                          icon: const Icon(Icons.close, color: Colors.white),
-                          style: IconButton.styleFrom(
-                            backgroundColor: Colors.black54,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _imagePath = null;
-                            });
-                          },
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Content field
+                TextField(
+                  controller: _contentController,
+                  enabled: _isEditing || isNewNote,
+                  maxLines: null,
+                  style: const TextStyle(fontSize: 16),
+                  decoration: InputDecoration(
+                    hintText: 'Start typing...',
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+
+                // Image preview
+                if (_imagePath != null) ...[
+                  const SizedBox(height: 24),
+                  Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.file(
+                          File(_imagePath!),
+                          width: double.infinity,
+                          fit: BoxFit.cover,
                         ),
                       ),
-                  ],
-                ),
-              ),
-          ],
-        ),
-        floatingActionButton: _isEditing
-            ? Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  FloatingActionButton(
-                    heroTag: 'image',
-                    onPressed: _pickImage,
-                    backgroundColor: Colors.grey.shade700,
-                    child: const Icon(Icons.image),
-                  ),
-                  const SizedBox(width: 16),
-                  FloatingActionButton.extended(
-                    heroTag: 'save',
-                    onPressed: _saveNote,
-                    backgroundColor: const Color(0xFF00BCD4),
-                    icon: const Icon(Icons.save),
-                    label: const Text('Save'),
+                      if (_isEditing || isNewNote)
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white),
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.black54,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _imagePath = null;
+                                _hasUnsavedChanges = true;
+                              });
+                            },
+                          ),
+                        ),
+                    ],
                   ),
                 ],
-              )
-            : null,
+
+                // Add image button (when editing)
+                if ((_isEditing || isNewNote) && _imagePath == null) ...[
+                  const SizedBox(height: 24),
+                  OutlinedButton.icon(
+                    onPressed: _pickImage,
+                    icon: const Icon(Icons.image_outlined),
+                    label: const Text('Add Image'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

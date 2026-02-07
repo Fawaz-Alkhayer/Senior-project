@@ -7,57 +7,134 @@ import 'services/theme_service.dart';
 import 'package:flutter_quill/flutter_quill.dart' show FlutterQuillLocalizations;
 import 'package:flutter_localizations/flutter_localizations.dart'; 
 
-// Light Theme - Dark Blue + Cyan
+// light theme
 final ThemeData lightTheme = ThemeData(
   useMaterial3: true,
   brightness: Brightness.light,
   colorScheme: ColorScheme.fromSeed(
-    seedColor: const Color(0xFF0D47A1), // Dark Blue
-    primary: const Color(0xFF0D47A1),
-    secondary: const Color(0xFF00BCD4), // Cyan
+    seedColor: const Color(0xFF4A6FA5), // Muted blue
+    primary: const Color(0xFF4A6FA5),
+    secondary: const Color(0xFFB3D4F7), // Light blue
+    surface: Colors.white,
+    background: const Color(0xFFF5F5F5), // Very light gray
     brightness: Brightness.light,
   ),
-  scaffoldBackgroundColor: Colors.white,
+  scaffoldBackgroundColor: const Color(0xFFF5F5F5),
   appBarTheme: const AppBarTheme(
-    backgroundColor: Color(0xFF1A237E), // Navy Blue
-    foregroundColor: Colors.white,
+    backgroundColor: Color(0xFFF5F5F5), // Match scaffold
+    foregroundColor: Color(0xFF212121), // Dark text
     elevation: 0,
+    centerTitle: false,
+    titleTextStyle: TextStyle(
+      color: Color(0xFF212121),
+      fontSize: 28,
+      fontWeight: FontWeight.w500,
+    ),
   ),
+  
   floatingActionButtonTheme: const FloatingActionButtonThemeData(
-    backgroundColor: Color(0xFF00BCD4), // Cyan
-    foregroundColor: Colors.white,
+    backgroundColor: Color(0xFFB3D4F7), // Light blue
+    foregroundColor: Color(0xFF212121),
+    elevation: 2,
   ),
-  progressIndicatorTheme: const ProgressIndicatorThemeData(
-    color: Color(0xFF00BCD4), // Cyan
+  inputDecorationTheme: InputDecorationTheme(
+    filled: false,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: Colors.grey.shade300),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: Colors.grey.shade300),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Color(0xFF4A6FA5), width: 2),
+    ),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+  ),
+  elevatedButtonTheme: ElevatedButtonThemeData(
+    style: ElevatedButton.styleFrom(
+      backgroundColor: const Color(0xFF4A6FA5),
+      foregroundColor: Colors.white,
+      elevation: 0,
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+    ),
+  ),
+  textButtonTheme: TextButtonThemeData(
+    style: TextButton.styleFrom(
+      foregroundColor: const Color(0xFF4A6FA5),
+    ),
   ),
 );
 
-// Dark Theme - Dark Blue + Cyan
+
+// Dark Theme 
 final ThemeData darkTheme = ThemeData(
   useMaterial3: true,
   brightness: Brightness.dark,
   colorScheme: ColorScheme.fromSeed(
-    seedColor: const Color(0xFF0D47A1), // Dark Blue
-    primary: const Color(0xFF1976D2),
-    secondary: const Color(0xFF00E5FF), // Bright Cyan
+    seedColor: const Color(0xFF4A6FA5),
+    primary: const Color(0xFF6B8FB8),
+    secondary: const Color(0xFFB3D4F7),
+    surface: const Color(0xFF1E1E1E),
+    background: const Color(0xFF121212),
     brightness: Brightness.dark,
   ),
   scaffoldBackgroundColor: const Color(0xFF121212),
   appBarTheme: const AppBarTheme(
-    backgroundColor: Color(0xFF1A237E), // Navy Blue
+    backgroundColor: Color(0xFF121212),
     foregroundColor: Colors.white,
     elevation: 0,
+    centerTitle: false,
+    titleTextStyle: TextStyle(
+      color: Colors.white,
+      fontSize: 28,
+      fontWeight: FontWeight.w500,
+    ),
   ),
+  
   floatingActionButtonTheme: const FloatingActionButtonThemeData(
-    backgroundColor: Color(0xFF00BCD4), // Cyan
+    backgroundColor: Color(0xFF6B8FB8),
     foregroundColor: Colors.white,
+    elevation: 2,
   ),
-  progressIndicatorTheme: const ProgressIndicatorThemeData(
-    color: Color(0xFF00E5FF), // Bright Cyan
+  inputDecorationTheme: InputDecorationTheme(
+    filled: false,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Color(0xFF3A3A3A)),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Color(0xFF3A3A3A)),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Color(0xFF6B8FB8), width: 2),
+    ),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+  ),
+  elevatedButtonTheme: ElevatedButtonThemeData(
+    style: ElevatedButton.styleFrom(
+      backgroundColor: const Color(0xFF6B8FB8),
+      foregroundColor: Colors.white,
+      elevation: 0,
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+    ),
+  ),
+  textButtonTheme: TextButtonThemeData(
+    style: TextButton.styleFrom(
+      foregroundColor: const Color(0xFF6B8FB8),
+    ),
   ),
 );
-
-
 
 
 void main() {

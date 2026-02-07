@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/note_model.dart';
+import 'rich_note_editor_screen.dart';
 import '../services/database_service.dart';
 import 'settings_screen.dart';
 import '../widgets/activity_detector.dart';
-import 'rich_note_editor_screen.dart';
-
-
-//imports list end...
 
 class NotesListScreen extends StatefulWidget {
   const NotesListScreen({super.key});
@@ -17,13 +14,13 @@ class NotesListScreen extends StatefulWidget {
 
 class _NotesListScreenState extends State<NotesListScreen> {
   List<Note> notes = [];
-  List<Note> filteredNotes = []; // For search results
+  List<Note> filteredNotes = [];
   bool isLoading = true;
   bool isSearching = false;
   final TextEditingController _searchController = TextEditingController();
-  String sortBy = 'date_desc'; 
-  bool showFavoritesOnly = false;
   
+  String sortBy = 'date_desc';
+  bool showFavoritesOnly = false;
 
   @override
   void initState() {
@@ -52,13 +49,11 @@ class _NotesListScreenState extends State<NotesListScreen> {
       isLoading = false;
     });
     
-    // Reapply search, sort, and filter
     if (_searchController.text.isNotEmpty) {
       _filterNotes(_searchController.text);
     }
     _applySortAndFilter();
   }
-  
 
   void _onSearchChanged() {
     _filterNotes(_searchController.text);
@@ -75,14 +70,12 @@ class _NotesListScreenState extends State<NotesListScreen> {
           final searchLower = query.toLowerCase();
           
           return titleLower.contains(searchLower) || 
-                contentLower.contains(searchLower);
+                 contentLower.contains(searchLower);
         }).toList();
-        
-        print('Search: "$query" - Found ${filteredNotes.length} notes');
       }
     });
+    _applySortAndFilter();
   }
-
 
   void _clearSearch() {
     _searchController.clear();
@@ -93,480 +86,209 @@ class _NotesListScreenState extends State<NotesListScreen> {
   }
 
   void _applySortAndFilter() {
-  setState(() {
-    // Start with all notes or filtered search results
-    List<Note> result = _searchController.text.isEmpty 
-        ? List.from(notes) 
-        : List.from(filteredNotes);
-    
-    // Apply favorites filter
-    if (showFavoritesOnly) {
-      result = result.where((note) => note.isFavorite).toList();
-    }
-    
-    // Apply sorting
-    switch (sortBy) {
-      case 'date_desc':
-        result.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-        break;
-      case 'date_asc':
-        result.sort((a, b) => a.updatedAt.compareTo(b.updatedAt));
-        break;
-      case 'title_asc':
-        result.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
-        break;
-      case 'title_desc':
-        result.sort((a, b) => b.title.toLowerCase().compareTo(a.title.toLowerCase()));
-        break;
-    }
-    
-    // Keep favorites at top if not filtering by favorites only
-    if (!showFavoritesOnly) {
-      final favorites = result.where((note) => note.isFavorite).toList();
-      final nonFavorites = result.where((note) => !note.isFavorite).toList();
-      result = [...favorites, ...nonFavorites];
-    }
-    
-    filteredNotes = result;
-    
-    print('Sort: $sortBy, Favorites Only: $showFavoritesOnly, Results: ${filteredNotes.length}');
-  });
-}
+    setState(() {
+      List<Note> result = _searchController.text.isEmpty 
+          ? List.from(notes) 
+          : List.from(filteredNotes);
+      
+      if (showFavoritesOnly) {
+        result = result.where((note) => note.isFavorite).toList();
+      }
+      
+      switch (sortBy) {
+        case 'date_desc':
+          result.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+          break;
+        case 'date_asc':
+          result.sort((a, b) => a.updatedAt.compareTo(b.updatedAt));
+          break;
+        case 'title_asc':
+          result.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+          break;
+        case 'title_desc':
+          result.sort((a, b) => b.title.toLowerCase().compareTo(a.title.toLowerCase()));
+          break;
+      }
+      
+      if (!showFavoritesOnly) {
+        final favorites = result.where((note) => note.isFavorite).toList();
+        final nonFavorites = result.where((note) => !note.isFavorite).toList();
+        result = [...favorites, ...nonFavorites];
+      }
+      
+      filteredNotes = result;
+    });
+  }
 
-void _showSortOptions() {
-  showModalBottomSheet(
-    context: context,
-    builder: (context) {
-      return SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.star_rounded, color: Color(0xFF00BCD4)), // Cyan star
-                  const SizedBox(width: 8),
-                  Text(
-                    'Sort & Filter',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.white
-                          : const Color(0xFF1A237E),
-                  ),
-                 ),
-                ]
-              ),
-            ),
-
-            const Divider(),
-            
-            // Filter Section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Text(
-                'FILTER',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-            ),
-            
-            ListTile(
-              leading: const Icon(Icons.list),
-              title: const Text('All Notes'),
-              trailing: !showFavoritesOnly ? const Icon(Icons.check, color: Colors.blue) : null,
-              onTap: () {
-                setState(() {
-                  showFavoritesOnly = false;
-                });
-                _applySortAndFilter();
-                Navigator.pop(context);
-              },
-            ),
-            
-            ListTile(
-              leading: const Icon(Icons.star, color: Colors.amber),
-              title: const Text('Favorites Only'),
-              trailing: showFavoritesOnly ? const Icon(Icons.check, color: Colors.blue) : null,
-              onTap: () {
-                setState(() {
-                  showFavoritesOnly = true;
-                });
-                _applySortAndFilter();
-                Navigator.pop(context);
-              },
-            ),
-            
-            const Divider(),
-            
-            // Sort Section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Text(
-                'SORT BY',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-            ),
-            
-            ListTile(
-              leading: const Icon(Icons.access_time),
-              title: const Text('Newest First'),
-              trailing: sortBy == 'date_desc' ? const Icon(Icons.check, color: Colors.blue) : null,
-              onTap: () {
-                setState(() {
-                  sortBy = 'date_desc';
-                });
-                _applySortAndFilter();
-                Navigator.pop(context);
-              },
-            ),
-            
-            ListTile(
-              leading: const Icon(Icons.access_time),
-              title: const Text('Oldest First'),
-              trailing: sortBy == 'date_asc' ? const Icon(Icons.check, color: Colors.blue) : null,
-              onTap: () {
-                setState(() {
-                  sortBy = 'date_asc';
-                });
-                _applySortAndFilter();
-                Navigator.pop(context);
-              },
-            ),
-            
-            ListTile(
-              leading: const Icon(Icons.sort_by_alpha),
-              title: const Text('Title (A-Z)'),
-              trailing: sortBy == 'title_asc' ? const Icon(Icons.check, color: Colors.blue) : null,
-              onTap: () {
-                setState(() {
-                  sortBy = 'title_asc';
-                });
-                _applySortAndFilter();
-                Navigator.pop(context);
-              },
-            ),
-            
-            ListTile(
-              leading: const Icon(Icons.sort_by_alpha),
-              title: const Text('Title (Z-A)'),
-              trailing: sortBy == 'title_desc' ? const Icon(Icons.check, color: Colors.blue) : null,
-              onTap: () {
-                setState(() {
-                  sortBy = 'title_desc';
-                });
-                _applySortAndFilter();
-                Navigator.pop(context);
-              },
-            ),
-            
-            const SizedBox(height:16),
-          ],
-        ),
-      );
-    },
-  );
-}
-
-  
-  @override
-  Widget build(BuildContext context) {
-    return ActivityDetector(
-      child: Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            icon: const Text('☰', style: TextStyle(fontSize: 24, color: Colors.white)),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Categories coming soon!')),
-              );
-            },
-            tooltip: 'Menu',
-          ),
-          title: isSearching
-              ? TextField(
-                  controller: _searchController,
-                  autofocus: true,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    hintText: 'Search notes...',
-                    hintStyle: TextStyle(color: Colors.white70),
-                    border: InputBorder.none,
-                  ),
-                )
-              : const Text('SafeNotes'),
-          backgroundColor: const Color(0xFF1A237E),
-          foregroundColor: Colors.white,
-          actions: [
-            if (isSearching)
-              IconButton(
-                icon: const Text('✖️', style: TextStyle(fontSize: 20)),
-                onPressed: _clearSearch,
-                tooltip: 'Clear Search',
-              )
-            else ...[
-              IconButton(
-                icon: const Text('🔍', style: TextStyle(fontSize: 20)),
-                onPressed: () {
-                  setState(() {
-                    isSearching = true;
-                  });
-                },
-                tooltip: 'Search',
-              ),
-              IconButton(
-                icon: const Text('⭐', style: TextStyle(fontSize: 20)),
-                onPressed: _showSortOptions,
-                tooltip: 'Sort & Filter',
-              ),
-              IconButton(
-                icon: const Text('⚙️', style: TextStyle(fontSize: 20)),
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const SettingsScreen(),
-                    ),
-                  );
-                },
-                tooltip: 'Settings',
-              ),
-            ],
-          ],
-        ),
-        
-        body: Column(
-          children: [
-            // Search results count banner
-            if (isSearching && _searchController.text.isNotEmpty)
+  void _showSortOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                color: Colors.blue.shade50,
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(20.0),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline, size: 16, color: Colors.blue.shade700),
-                    const SizedBox(width: 8),
+                    Icon(Icons.filter_list, 
+                      color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(width: 12),
                     Text(
-                      '${filteredNotes.length} note${filteredNotes.length == 1 ? '' : 's'} found',
+                      'Sort & Filter',
                       style: TextStyle(
-                        color: Colors.blue.shade700,
-                        fontSize: 14,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ],
                 ),
               ),
-            
-            // Main content area
-            Expanded(
-              child: isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : notes.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.note_add_outlined,
-                                size: 100,
-                                color: Colors.grey.shade400,
-                              ),
-                              const SizedBox(height: 20),
-                              Text(
-                                'No notes yet',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                'Tap + to create your first note',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey.shade500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : Column(
-                          children: [
-                            if (isSearching && filteredNotes.isEmpty)
-                              Expanded(
-                                child: Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.search_off,
-                                        size: 80,
-                                        color: Colors.grey.shade400,
-                                      ),
-                                      const SizedBox(height: 16),
-                                      Text(
-                                        'No notes found',
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          color: Colors.grey.shade600,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        'Try a different search term',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.grey.shade500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              )
-                            else
-                              Expanded(
-                                child: ListView.builder(
-                                  padding: const EdgeInsets.all(16),
-                                  itemCount: filteredNotes.length,
-                                  itemBuilder: (context, index) {
-                                    final note = filteredNotes[index];
-                                    return Card(
-                                      margin: const EdgeInsets.only(bottom: 12),
-                                      elevation: 2,
-                                      child: ListTile(
-                                        contentPadding: const EdgeInsets.all(16),
-                                        leading: IconButton(
-                                          icon: Icon(
-                                            note.isFavorite ? Icons.star : Icons.star_border,
-                                            color: note.isFavorite ? Colors.amber : Colors.grey,
-                                            size: 28,
-                                          ),
-                                          onPressed: () async {
-                                            final updatedNote = note.copyWith(isFavorite: !note.isFavorite);
-                                            await DatabaseService.instance.toggleFavorite(
-                                              note.id!,
-                                              updatedNote.isFavorite,
-                                            );
-                                            _loadNotes();
-                                          },
-                                        ),
-                                        title: Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                note.title,
-                                                style: const TextStyle(
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                            if (note.isFavorite)
-                                                Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.amber.shade100,
-                                                  borderRadius: BorderRadius.circular(12),
-                                                ),
-                                                child: Row(
-                                                  mainAxisSize: MainAxisSize.min,
-                                                  children: [
-                                                    Icon(Icons.star, size: 14, color: Colors.amber.shade700),
-                                                    const SizedBox(width: 4),
-                                                    Text(
-                                                      'Pinned',
-                                                      style: TextStyle(
-                                                        fontSize: 11,
-                                                        color: Colors.amber.shade700,
-                                                        fontWeight: FontWeight.bold,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                          ],
-                                        ),
-                                        subtitle: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              note.content,
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(
-                                                color: Colors.grey.shade700,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              _formatDate(note.updatedAt),
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey.shade500,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        trailing: Icon(
-                                          Icons.chevron_right,
-                                          color: Colors.grey.shade400,
-                                        ),
-                                        onTap: () async {
-                                          final result = await Navigator.of(context).push(
-                                            MaterialPageRoute(
-                                              builder: (context) => RichNoteEditorScreen(note: note),
-                                            ),
-                                          );
-                                          
-
-                                          if (result != null) {
-                                            if (result == 'delete') {
-                                              await DatabaseService.instance.deleteNote(note.id!);
-                                              _loadNotes();
-                                            } else if (result is Note) {
-                                              await DatabaseService.instance.updateNote(result);
-                                              _loadNotes();
-                                            }
-                                          }
-                                        },
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                          ],
-                        ),
-            ),
-          ],
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () async {
-              final result = await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => RichNoteEditorScreen(),
+              const Divider(height: 1),
+              
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'FILTER',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade600,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
                 ),
-              );
-
-              if (result != null && result is Note) {
-                await DatabaseService.instance.createNote(result);
-                _loadNotes();
-              }
-            },
-        
-          backgroundColor: Colors.blue.shade700,
-          child: const Icon(Icons.add, color: Colors.white),
-        ),
-      ),
+              ),
+              
+              ListTile(
+                leading: const Icon(Icons.list_alt),
+                title: const Text('All Notes'),
+                trailing: !showFavoritesOnly 
+                    ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) 
+                    : null,
+                onTap: () {
+                  setState(() {
+                    showFavoritesOnly = false;
+                  });
+                  _applySortAndFilter();
+                  Navigator.pop(context);
+                },
+              ),
+              
+              ListTile(
+                leading: const Icon(Icons.star_outline),
+                title: const Text('Favorites Only'),
+                trailing: showFavoritesOnly 
+                    ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) 
+                    : null,
+                onTap: () {
+                  setState(() {
+                    showFavoritesOnly = true;
+                  });
+                  _applySortAndFilter();
+                  Navigator.pop(context);
+                },
+              ),
+              
+              const Divider(height: 1),
+              
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'SORT BY',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade600,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ),
+              
+              ListTile(
+                leading: const Icon(Icons.access_time),
+                title: const Text('Newest First'),
+                trailing: sortBy == 'date_desc' 
+                    ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) 
+                    : null,
+                onTap: () {
+                  setState(() {
+                    sortBy = 'date_desc';
+                  });
+                  _applySortAndFilter();
+                  Navigator.pop(context);
+                },
+              ),
+              
+              ListTile(
+                leading: const Icon(Icons.access_time),
+                title: const Text('Oldest First'),
+                trailing: sortBy == 'date_asc' 
+                    ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) 
+                    : null,
+                onTap: () {
+                  setState(() {
+                    sortBy = 'date_asc';
+                  });
+                  _applySortAndFilter();
+                  Navigator.pop(context);
+                },
+              ),
+              
+              ListTile(
+                leading: const Icon(Icons.sort_by_alpha),
+                title: const Text('Title (A-Z)'),
+                trailing: sortBy == 'title_asc' 
+                    ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) 
+                    : null,
+                onTap: () {
+                  setState(() {
+                    sortBy = 'title_asc';
+                  });
+                  _applySortAndFilter();
+                  Navigator.pop(context);
+                },
+              ),
+              
+              ListTile(
+                leading: const Icon(Icons.sort_by_alpha),
+                title: const Text('Title (Z-A)'),
+                trailing: sortBy == 'title_desc' 
+                    ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) 
+                    : null,
+                onTap: () {
+                  setState(() {
+                    sortBy = 'title_desc';
+                  });
+                  _applySortAndFilter();
+                  Navigator.pop(context);
+                },
+              ),
+              
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -587,7 +309,211 @@ void _showSortOptions() {
     } else if (difference.inDays < 7) {
       return '${difference.inDays}d ago';
     } else {
-      return '${date.day}/${date.month}/${date.year}';
+      return 'Edited: ${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ActivityDetector(
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Secure Notes'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.star_outline),
+              onPressed: _showSortOptions,
+              tooltip: 'Sort & Filter',
+            ),
+            IconButton(
+              icon: const Icon(Icons.settings_outlined),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const SettingsScreen(),
+                  ),
+                );
+              },
+              tooltip: 'Settings',
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            // Search Bar
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search notes...',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: _clearSearch,
+                        )
+                      : null,
+                ),
+              ),
+            ),
+            
+            // Notes List
+            Expanded(
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : filteredNotes.isEmpty
+                      ? _buildEmptyState()
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: filteredNotes.length,
+                          itemBuilder: (context, index) {
+                            final note = filteredNotes[index];
+                            return _buildNoteCard(note);
+                          },
+                        ),
+            ),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () async {
+            final result = await Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const RichNoteEditorScreen(),
+              ),
+            );
+
+            if (result != null && result is Note) {
+              await DatabaseService.instance.createNote(result);
+              _loadNotes();
+            }
+          },
+          child: const Icon(Icons.add),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.note_add_outlined,
+            size: 80,
+            color: Colors.grey.shade400,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No notes yet',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Tap + to create your first note',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoteCard(Note note) {
+    return Card(
+      elevation: 1,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      color: Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFF1E1E1E)
+          : Colors.white,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () async {
+          final result = await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => RichNoteEditorScreen(note: note),
+            ),
+          );
+
+          if (result != null) {
+            if (result == 'delete') {
+              await DatabaseService.instance.deleteNote(note.id!);
+            } else if (result is Note) {
+              await DatabaseService.instance.updateNote(result);
+            }
+            _loadNotes();
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      note.title,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      note.isFavorite ? Icons.star : Icons.star_outline,
+                      color: note.isFavorite 
+                          ? Colors.amber 
+                          : Colors.grey.shade400,
+                      size: 24,
+                    ),
+                    onPressed: () async {
+                      await DatabaseService.instance.toggleFavorite(
+                        note.id!,
+                        !note.isFavorite,
+                      );
+                      _loadNotes();
+                    },
+                  ),
+                ],
+              ),
+              if (note.content.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  note.content,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+              const SizedBox(height: 12),
+              Text(
+                _formatDate(note.updatedAt),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

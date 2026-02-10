@@ -4,6 +4,9 @@ import 'rich_note_editor_screen.dart';
 import '../services/database_service.dart';
 import 'settings_screen.dart';
 import '../widgets/activity_detector.dart';
+import '../models/category_model.dart';
+import 'categories_screen.dart';
+import '../services/note_auth_service.dart';
 
 class NotesListScreen extends StatefulWidget {
   const NotesListScreen({super.key});
@@ -18,7 +21,8 @@ class _NotesListScreenState extends State<NotesListScreen> {
   bool isLoading = true;
   bool isSearching = false;
   final TextEditingController _searchController = TextEditingController();
-  
+  List<Category> categories = [];
+  String? selectedCategoryId;
   String sortBy = 'date_desc';
   bool showFavoritesOnly = false;
 
@@ -42,10 +46,12 @@ class _NotesListScreenState extends State<NotesListScreen> {
     });
 
     final loadedNotes = await DatabaseService.instance.readAllNotes();
+    final loadedCategories = await DatabaseService.instance.readAllCategories();
 
     setState(() {
       notes = loadedNotes;
       filteredNotes = loadedNotes;
+      categories = loadedCategories;
       isLoading = false;
     });
     
@@ -91,6 +97,11 @@ class _NotesListScreenState extends State<NotesListScreen> {
           ? List.from(notes) 
           : List.from(filteredNotes);
       
+      // Apply category filter
+      if (selectedCategoryId != null) {
+        result = result.where((note) => note.categoryId == selectedCategoryId).toList();
+      }
+      
       if (showFavoritesOnly) {
         result = result.where((note) => note.isFavorite).toList();
       }
@@ -119,6 +130,7 @@ class _NotesListScreenState extends State<NotesListScreen> {
       filteredNotes = result;
     });
   }
+  
 
   void _showSortOptions() {
     showModalBottomSheet(
@@ -317,7 +329,17 @@ class _NotesListScreenState extends State<NotesListScreen> {
   Widget build(BuildContext context) {
     return ActivityDetector(
       child: Scaffold(
+        drawer: _buildCategoryDrawer(),  
         appBar: AppBar(
+          leading: Builder(  
+            builder: (context) => IconButton(
+              icon: const Text('☰', style: TextStyle(fontSize: 24)),
+              onPressed: () {
+                Scaffold.of(context).openDrawer();
+              },
+              tooltip: 'Categories',
+            ),
+          ),
           title: const Text('Secure Notes'),
           actions: [
             IconButton(
@@ -426,7 +448,18 @@ class _NotesListScreenState extends State<NotesListScreen> {
     );
   }
 
+  
   Widget _buildNoteCard(Note note) {
+    // Find category for this note
+    Category? noteCategory;
+    if (note.categoryId != null) {
+      try {
+        noteCategory = categories.firstWhere((cat) => cat.id == note.categoryId);
+      } catch (e) {
+        // Category not found
+      }
+    }
+
     return Card(
       elevation: 1,
       margin: const EdgeInsets.only(bottom: 12),
@@ -438,7 +471,25 @@ class _NotesListScreenState extends State<NotesListScreen> {
           : Colors.white,
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
+        
         onTap: () async {
+          // Check if note is locked
+          if (note.isLocked) {
+            final authenticated = await NoteAuthService.instance.authenticateForNote(context);
+            
+            if (!authenticated) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Authentication failed'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+              return;
+            }
+          }
+
           final result = await Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) => RichNoteEditorScreen(note: note),
@@ -454,6 +505,8 @@ class _NotesListScreenState extends State<NotesListScreen> {
             _loadNotes();
           }
         },
+
+        onLongPress: () => _showNoteOptionsMenu(note),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -461,6 +514,21 @@ class _NotesListScreenState extends State<NotesListScreen> {
             children: [
               Row(
                 children: [
+                  // Lock icon (if locked)
+                  if (note.isLocked)
+                    Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.lock,
+                        size: 16,
+                        color: Colors.orange.shade700,
+                      ),
+                    ),
                   Expanded(
                     child: Text(
                       note.title,
@@ -490,7 +558,37 @@ class _NotesListScreenState extends State<NotesListScreen> {
                   ),
                 ],
               ),
-              if (note.content.isNotEmpty) ...[
+              
+              if (noteCategory != null) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: noteCategory.color.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.folder,
+                        size: 14,
+                        color: noteCategory.color,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        noteCategory.name,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: noteCategory.color,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              if (note.content.isNotEmpty && !note.isLocked) ...[
                 const SizedBox(height: 8),
                 Text(
                   note.content,
@@ -500,6 +598,17 @@ class _NotesListScreenState extends State<NotesListScreen> {
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
+                ),
+              ],
+              if (note.isLocked) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Unlock to view content',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade500,
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
               ],
               const SizedBox(height: 12),
@@ -514,6 +623,307 @@ class _NotesListScreenState extends State<NotesListScreen> {
           ),
         ),
       ),
+    );
+  }
+
+    Widget _buildCategoryDrawer() {
+    return Drawer(
+      child: Column(
+        children: [
+          DrawerHeader(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Icon(Icons.folder_outlined, size: 48, color: Colors.white),
+                SizedBox(height: 8),
+                Text(
+                  'Categories',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.all_inbox),
+            title: const Text('All Notes'),
+            selected: selectedCategoryId == null,
+            onTap: () {
+              setState(() {
+                selectedCategoryId = null;
+              });
+              _applySortAndFilter();
+              Navigator.pop(context);
+            },
+          ),
+          const Divider(),
+          Expanded(
+            child: categories.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        'No categories yet.\nTap "Manage Categories" to create one.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey.shade600),
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: categories.length,
+                    itemBuilder: (context, index) {
+                      final category = categories[index];
+                      return ListTile(
+                        leading: Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: category.color.withOpacity(0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.folder,
+                            color: category.color,
+                            size: 20,
+                          ),
+                        ),
+                        title: Text(category.name),
+                        selected: selectedCategoryId == category.id,
+                        onTap: () {
+                          setState(() {
+                            selectedCategoryId = category.id;
+                          });
+                          _applySortAndFilter();
+                          Navigator.pop(context);
+                        },
+                      );
+                    },
+                  ),
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.settings_outlined),
+            title: const Text('Manage Categories'),
+            onTap: () async {
+              Navigator.pop(context);
+              await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const CategoriesScreen(),
+                ),
+              );
+              _loadNotes();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+  void _showNoteOptionsMenu(Note note) {
+  showModalBottomSheet(
+    context: context,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (context) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Text(
+              note.title,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const Divider(height: 1),
+          
+          // Assign Category
+          ListTile(
+            leading: const Icon(Icons.folder_outlined),
+            title: const Text('Assign Category'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.pop(context);
+              _showCategorySelectionDialog(note);
+            },
+          ),
+          
+          // Remove Category (if has category)
+          if (note.categoryId != null)
+            ListTile(
+              leading: const Icon(Icons.folder_off_outlined),
+              title: const Text('Remove Category'),
+              onTap: () async {
+                Navigator.pop(context);
+                await DatabaseService.instance.assignCategoryToNote(note.id!, null);
+                _loadNotes();
+                
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Category removed'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              },
+            ),
+
+          ListTile(
+            leading: Icon(
+              note.isLocked ? Icons.lock_open_outlined : Icons.lock_outline,
+              color: note.isLocked ? Colors.orange : null,
+            ),
+            title: Text(note.isLocked ? 'Unlock Note' : 'Lock Note'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () async {
+              Navigator.pop(context);
+              
+              if (note.isLocked) {
+                // Unlocking - require authentication first
+                final authenticated = await NoteAuthService.instance.authenticateForNote(context);
+                
+                if (!authenticated) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Authentication failed'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                  return;
+                }
+              }
+              
+              // Toggle lock state
+              await DatabaseService.instance.toggleNoteLock(note.id!, !note.isLocked);
+              _loadNotes();
+              
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(note.isLocked ? 'Note unlocked' : 'Note locked'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            },
+          ),
+
+          const SizedBox(height: 16),
+        ],
+      );
+    },
+  );
+}
+
+  void _showCategorySelectionDialog(Note note) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Select Category'),
+          content: categories.isEmpty
+              ? const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text(
+                    'No categories available.\nCreate categories first.',
+                    textAlign: TextAlign.center,
+                  ),
+                )
+              : SizedBox(
+                  width: double.maxFinite,
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: categories.length,
+                    itemBuilder: (context, index) {
+                      final category = categories[index];
+                      final isSelected = note.categoryId == category.id;
+                      
+                      return ListTile(
+                        leading: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: category.color.withOpacity(0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.folder,
+                            color: category.color,
+                            size: 20,
+                          ),
+                        ),
+                        title: Text(category.name),
+                        trailing: isSelected 
+                            ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) 
+                            : null,
+                        selected: isSelected,
+                        onTap: () async {
+                          Navigator.pop(context);
+                          await DatabaseService.instance.assignCategoryToNote(
+                            note.id!,
+                            category.id,
+                          );
+                          _loadNotes();
+                          
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Assigned to "${category.name}"'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
+                        },
+                      );
+                    },
+                  ),
+                ),
+          actions: [
+            if (categories.isNotEmpty)
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+            if (categories.isEmpty)
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const CategoriesScreen(),
+                    ),
+                  );
+                  _loadNotes();
+                },
+                child: const Text('Create Categories'),
+              ),
+          ],
+        );
+      },
     );
   }
 }

@@ -5,7 +5,9 @@ class Note {
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool isFavorite;
-  final String? imagePath; // New field for image
+  final String? imagePath; 
+  final String? categoryId;
+  final bool isLocked;
 
   Note({
     this.id,
@@ -15,6 +17,8 @@ class Note {
     required this.updatedAt,
     this.isFavorite = false,
     this.imagePath,
+    this.categoryId,
+    this.isLocked = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -26,6 +30,8 @@ class Note {
       'updatedAt': updatedAt.toIso8601String(),
       'isFavorite': isFavorite ? 1 : 0,
       'imagePath': imagePath,
+      'categoryId': categoryId,
+      'isLocked': isLocked ? 1 : 0, 
     };
   }
 
@@ -38,6 +44,8 @@ class Note {
       updatedAt: DateTime.parse(map['updatedAt']),
       isFavorite: map['isFavorite'] == 1,
       imagePath: map['imagePath'],
+      categoryId: map['categoryId'],
+      isLocked: map['isLocked'] == 1,
     );
   }
 
@@ -49,7 +57,10 @@ class Note {
     DateTime? updatedAt,
     bool? isFavorite,
     String? imagePath,
+    String? categoryId, 
+    bool? isLocked, 
   }) {
+    
     return Note(
       id: id ?? this.id,
       title: title ?? this.title,
@@ -58,6 +69,8 @@ class Note {
       updatedAt: updatedAt ?? this.updatedAt,
       isFavorite: isFavorite ?? this.isFavorite,
       imagePath: imagePath ?? this.imagePath,
+      categoryId: categoryId ?? this.categoryId,
+      isLocked: isLocked ?? this.isLocked,
     );
   }
 }

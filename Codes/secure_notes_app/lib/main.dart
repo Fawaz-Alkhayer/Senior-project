@@ -12,17 +12,17 @@ final ThemeData lightTheme = ThemeData(
   useMaterial3: true,
   brightness: Brightness.light,
   colorScheme: ColorScheme.fromSeed(
-    seedColor: const Color(0xFF4A6FA5), // Muted blue
+    seedColor: const Color(0xFF4A6FA5), 
     primary: const Color(0xFF4A6FA5),
-    secondary: const Color(0xFFB3D4F7), // Light blue
+    secondary: const Color(0xFFB3D4F7), 
     surface: Colors.white,
-    background: const Color(0xFFF5F5F5), // Very light gray
+    background: const Color(0xFFF5F5F5), 
     brightness: Brightness.light,
   ),
   scaffoldBackgroundColor: const Color(0xFFF5F5F5),
   appBarTheme: const AppBarTheme(
-    backgroundColor: Color(0xFFF5F5F5), // Match scaffold
-    foregroundColor: Color(0xFF212121), // Dark text
+    backgroundColor: Color(0xFFF5F5F5), 
+    foregroundColor: Color(0xFF212121), 
     elevation: 0,
     centerTitle: false,
     titleTextStyle: TextStyle(
@@ -33,7 +33,7 @@ final ThemeData lightTheme = ThemeData(
   ),
   
   floatingActionButtonTheme: const FloatingActionButtonThemeData(
-    backgroundColor: Color(0xFFB3D4F7), // Light blue
+    backgroundColor: Color(0xFFB3D4F7), 
     foregroundColor: Color(0xFF212121),
     elevation: 2,
   ),

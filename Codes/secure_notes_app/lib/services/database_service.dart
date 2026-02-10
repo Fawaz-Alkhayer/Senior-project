@@ -1,4 +1,4 @@
-
+import '../models/category_model.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/note_model.dart';
@@ -47,7 +47,19 @@ class DatabaseService {
         createdAt $textType,
         updatedAt $textType,
         isFavorite $intType,
-        imagePath $textTypeNull
+        imagePath $textTypeNull,
+        categoryId $textTypeNull,
+        isLocked $intType DEFAULT 0
+      )
+    ''');
+
+    
+    await db.execute('''
+      CREATE TABLE categories (
+        id $textType PRIMARY KEY,
+        name $textType,
+        color $intType,
+        createdAt $textType
       )
     ''');
  }
@@ -123,6 +135,89 @@ class DatabaseService {
       {'isFavorite': isFavorite ? 1 : 0},
       where: 'id = ?',
       whereArgs: [id],
+    );
+  }
+
+  // Category CRUD operations
+  Future<void> createCategory(Category category) async {
+    final db = await database;
+    await db.insert('categories', category.toMap());
+  }
+
+  Future<List<Category>> readAllCategories() async {
+    final db = await database;
+    final result = await db.query('categories', orderBy: 'name ASC');
+    return result.map((map) => Category.fromMap(map)).toList();
+  }
+
+  Future<Category?> readCategory(String id) async {
+    final db = await database;
+    final result = await db.query(
+      'categories',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    if (result.isEmpty) return null;
+    return Category.fromMap(result.first);
+  }
+
+  Future<void> updateCategory(Category category) async {
+    final db = await database;
+    await db.update(
+      'categories',
+      category.toMap(),
+      where: 'id = ?',
+      whereArgs: [category.id],
+    );
+  }
+
+  Future<void> deleteCategory(String id) async {
+    final db = await database;
+    
+    // First, remove category from all notes
+    await db.update(
+      'notes',
+      {'categoryId': null},
+      where: 'categoryId = ?',
+      whereArgs: [id],
+    );
+    
+    // Then delete the category
+    await db.delete(
+      'categories',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<void> assignCategoryToNote(int noteId, String? categoryId) async {
+    final db = await database;
+    await db.update(
+      'notes',
+      {'categoryId': categoryId},
+      where: 'id = ?',
+      whereArgs: [noteId],
+    );
+  }
+
+  Future<List<Note>> readNotesByCategory(String categoryId) async {
+    final db = await database;
+    final result = await db.query(
+      'notes',
+      where: 'categoryId = ?',
+      whereArgs: [categoryId],
+      orderBy: 'isFavorite DESC, updatedAt DESC',
+    );
+    return result.map((map) => Note.fromMap(map)).toList();
+  }
+  
+  Future<void> toggleNoteLock(int noteId, bool isLocked) async {
+    final db = await database;
+    await db.update(
+      'notes',
+      {'isLocked': isLocked ? 1 : 0},
+      where: 'id = ?',
+      whereArgs: [noteId],
     );
   }
 }

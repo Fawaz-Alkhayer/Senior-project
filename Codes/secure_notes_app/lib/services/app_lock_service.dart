@@ -7,9 +7,11 @@ class AppLockService extends ChangeNotifier {
   AppLockService._init();
 
   bool _isLocked = true;
-  Timer? _lockTimer;
-  Duration _lockDuration = const Duration(seconds: 120);
+  Timer? _timer;
+  int _lockDuration = 120;
+  bool _isPaused = false;
   GlobalKey<NavigatorState>? _navigatorKey;
+  
 
   bool get isLocked => _isLocked;
 
@@ -25,7 +27,7 @@ class AppLockService extends ChangeNotifier {
 
   void lock() {
     _isLocked = true;
-    _lockTimer?.cancel();
+    _timer?.cancel();
     
     if (_navigatorKey?.currentState != null) {
       _navigatorKey!.currentState!.popUntil((route) => route.isFirst);
@@ -35,10 +37,18 @@ class AppLockService extends ChangeNotifier {
   }
 
   void _resetTimer() {
-    _lockTimer?.cancel();
-    _lockTimer = Timer(_lockDuration, () {
-      lock();
-    });
+    _timer?.cancel();
+    
+    // Don't start timer if paused
+    if (_isPaused) {
+      return;
+    }
+    
+    if (_lockDuration > 0 && !_isLocked) {
+      _timer = Timer(Duration(seconds: _lockDuration), () {
+        lock();
+      });
+    }
   }
 
   void onUserActivity() {
@@ -49,20 +59,28 @@ class AppLockService extends ChangeNotifier {
 
   void updateLockDuration(int seconds) {
     if (seconds == 0) {
-      _lockTimer?.cancel();
-      _lockDuration = const Duration(days: 365);
+      _timer?.cancel();
+      _lockDuration = 0;
     } else {
-      _lockDuration = Duration(seconds: seconds);
+      _lockDuration = seconds;
     }
-    
-    if (!_isLocked) {
-      _resetTimer();
-    }
+    _resetTimer();
+    notifyListeners();
   }
 
   @override
   void dispose() {
-    _lockTimer?.cancel();
+    _timer?.cancel();
     super.dispose();
+  }
+
+  void pauseAutoLock() {
+    _isPaused = true;
+    _timer?.cancel();
+  }
+
+  void resumeAutoLock() {
+    _isPaused = false;
+    _resetTimer();
   }
 }

@@ -12,11 +12,11 @@ class NoteAuthService {
   final LocalAuthentication _localAuth = LocalAuthentication();
 
   Future<bool> authenticateForNote(BuildContext context) async {
-    // Temporarily disable auto-lock during authentication
+    
     AppLockService.instance.pauseAutoLock();
     
     try {
-      // Try biometric first
+      
       final canCheckBiometrics = await _localAuth.canCheckBiometrics;
       final isDeviceSupported = await _localAuth.isDeviceSupported();
 
@@ -29,13 +29,11 @@ class NoteAuthService {
           ),
         );
 
-        if (authenticated) {
-          AppLockService.instance.resumeAutoLock();
-          return true;
-        }
+        await Future.delayed(const Duration(milliseconds: 500));
+        AppLockService.instance.resumeAutoLock();
+        return authenticated;
       }
 
-      // If biometric fails or unavailable, try PIN
       final hasPinSetup = await PinService.instance.isPinSet();
       
       if (hasPinSetup && context.mounted) {
@@ -45,6 +43,7 @@ class NoteAuthService {
           ),
         );
         
+        await Future.delayed(const Duration(milliseconds: 500));
         AppLockService.instance.resumeAutoLock();
         return result == true;
       }

@@ -7,13 +7,19 @@ class AppLockService extends ChangeNotifier {
   AppLockService._init();
 
   bool _isLocked = true;
+  bool get isLocked => _isLocked;
+  
   Timer? _timer;
   int _lockDuration = 120;
+
   bool _isPaused = false;
+  bool get isPaused => _isPaused;
+
   GlobalKey<NavigatorState>? _navigatorKey;
   
 
-  bool get isLocked => _isLocked;
+
+  
 
   void setNavigatorKey(GlobalKey<NavigatorState> key) {
     _navigatorKey = key;
@@ -52,7 +58,7 @@ class AppLockService extends ChangeNotifier {
   }
 
   void onUserActivity() {
-    if (!_isLocked) {
+    if (!_isPaused && !_isLocked) {
       _resetTimer();
     }
   }

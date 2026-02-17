@@ -8,6 +8,7 @@ import '../models/category_model.dart';
 import 'categories_screen.dart';
 import '../services/note_auth_service.dart';
 
+
 class NotesListScreen extends StatefulWidget {
   const NotesListScreen({super.key});
 
@@ -472,6 +473,7 @@ class _NotesListScreenState extends State<NotesListScreen> {
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         
+        
         onTap: () async {
           // Check if note is locked
           if (note.isLocked) {
@@ -488,6 +490,9 @@ class _NotesListScreenState extends State<NotesListScreen> {
               }
               return;
             }
+            
+            // Wait a moment before opening to ensure auth is complete
+            await Future.delayed(const Duration(milliseconds: 300));
           }
 
           final result = await Navigator.of(context).push(
@@ -505,6 +510,7 @@ class _NotesListScreenState extends State<NotesListScreen> {
             _loadNotes();
           }
         },
+      
 
         onLongPress: () => _showNoteOptionsMenu(note),
         child: Padding(

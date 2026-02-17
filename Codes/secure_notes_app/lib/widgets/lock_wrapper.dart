@@ -27,8 +27,9 @@ class _LockWrapperState extends State<LockWrapper> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused || 
-        state == AppLifecycleState.inactive) {
+    if ((state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) &&
+        !_lockService.isPaused) {
       _lockService.lock();
     }
   }

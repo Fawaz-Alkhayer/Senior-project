@@ -92,7 +92,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return '${seconds ~/ 60} minute${seconds ~/ 60 > 1 ? 's' : ''}';
   }
 
+  
   Future<void> _removePin() async {
+    // Verify current PIN first
+    final currentPin = await _askForCurrentPin();
+    if (currentPin == null) return;
+
+    final isValid = await PinService.instance.verifyPin(currentPin);
+    if (!isValid) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Incorrect PIN'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -120,7 +138,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() {
         _isPinSet = false;
       });
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -130,6 +148,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       }
     }
+  }
+
+  Future<String?> _askForCurrentPin() async {
+    final controller = TextEditingController();
+    bool obscure = true;
+
+    return showDialog<String>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Enter Current PIN'),
+          content: TextField(
+            controller: controller,
+            obscureText: obscure,
+            keyboardType: TextInputType.number,
+            maxLength: 6,
+            decoration: InputDecoration(
+              labelText: 'Current PIN',
+              prefixIcon: const Icon(Icons.dialpad),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                ),
+                onPressed: () => setState(() => obscure = !obscure),
+              ),
+              counterText: '',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(null),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(controller.text),
+              child: const Text('Confirm'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showPrivacyPolicy() {
@@ -210,6 +269,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: const Text('Change PIN'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () async {
+                  // Verify current PIN before allowing change
+                  final currentPin = await _askForCurrentPin();
+                  if (currentPin == null) return;
+
+                  final isValid = await PinService.instance.verifyPin(currentPin);
+                  if (!isValid) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Incorrect PIN'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                    return;
+                  }
+
                   final result = await Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) => const PinSetupScreen(),
@@ -217,6 +293,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   );
                   if (result == true) {
                     _loadSettings();
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('PIN changed successfully'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    }
                   }
                 },
               ),

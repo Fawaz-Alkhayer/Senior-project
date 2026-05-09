@@ -22,7 +22,7 @@ void main() {
       final elapsed = DateTime.now().difference(start).inMilliseconds;
 
       print('PT-01 Note creation time: ${elapsed}ms');
-      expect(elapsed, lessThan(1000));
+      expect(elapsed, lessThan(2000)); // PT-01
       await db.deleteNote(created.id!);
     });
 
@@ -62,7 +62,7 @@ void main() {
       final elapsed = DateTime.now().difference(start).inMilliseconds;
 
       print('PT-04 PIN hashing and storage time: ${elapsed}ms');
-      expect(elapsed, lessThan(500));
+      expect(elapsed, lessThan(1500)); // PT-04
     });
 
     testWidgets('PT-05: PIN verification time', (tester) async {

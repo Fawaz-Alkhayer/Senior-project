@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/pin_service.dart';
 import '../widgets/activity_detector.dart';
@@ -13,14 +14,59 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
   final TextEditingController _pinController = TextEditingController();
   bool _obscurePin = true;
   String _errorMessage = '';
+  bool _isLockedOut = false;
+  int _remainingSeconds = 0;
+  Timer? _countdownTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLockoutStatus();
+  }
 
   @override
   void dispose() {
     _pinController.dispose();
+    _countdownTimer?.cancel();
     super.dispose();
   }
 
+  Future<void> _checkLockoutStatus() async {
+    final lockedOut = await PinService.instance.isLockedOut();
+    if (lockedOut) {
+      final remaining = await PinService.instance.getRemainingLockoutSeconds();
+      setState(() {
+        _isLockedOut = true;
+        _remainingSeconds = remaining;
+        _errorMessage = 'Too many failed attempts. Try again in $_remainingSeconds seconds.';
+      });
+      _startCountdown();
+    }
+  }
+
+  void _startCountdown() {
+    _countdownTimer?.cancel();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+      final remaining = await PinService.instance.getRemainingLockoutSeconds();
+      if (remaining <= 0) {
+        timer.cancel();
+        setState(() {
+          _isLockedOut = false;
+          _remainingSeconds = 0;
+          _errorMessage = '';
+        });
+      } else {
+        setState(() {
+          _remainingSeconds = remaining;
+          _errorMessage = 'Too many failed attempts. Try again in $_remainingSeconds seconds.';
+        });
+      }
+    });
+  }
+
   Future<void> _verifyPin() async {
+    if (_isLockedOut) return;
+
     final pin = _pinController.text;
 
     if (pin.length < 6) {
@@ -30,15 +76,42 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
       return;
     }
 
+    final lockedOut = await PinService.instance.isLockedOut();
+    if (lockedOut) {
+      final remaining = await PinService.instance.getRemainingLockoutSeconds();
+      setState(() {
+        _isLockedOut = true;
+        _remainingSeconds = remaining;
+        _errorMessage = 'Too many failed attempts. Try again in $_remainingSeconds seconds.';
+      });
+      _startCountdown();
+      return;
+    }
+
     final isValid = await PinService.instance.verifyPin(pin);
 
     if (isValid && mounted) {
       Navigator.of(context).pop(true);
     } else {
-      setState(() {
-        _errorMessage = 'Incorrect PIN. Please try again.';
-        _pinController.clear();
-      });
+      final nowLockedOut = await PinService.instance.isLockedOut();
+      final attemptCount = await PinService.instance.getAttemptCount();
+
+      if (nowLockedOut) {
+        final remaining = await PinService.instance.getRemainingLockoutSeconds();
+        setState(() {
+          _isLockedOut = true;
+          _remainingSeconds = remaining;
+          _errorMessage = 'Too many failed attempts. Try again in $_remainingSeconds seconds.';
+          _pinController.clear();
+        });
+        _startCountdown();
+      } else {
+        final attemptsLeft = PinService.maxAttempts - attemptCount;
+        setState(() {
+          _errorMessage = 'Incorrect PIN. $attemptsLeft attempt${attemptsLeft == 1 ? '' : 's'} remaining.';
+          _pinController.clear();
+        });
+      }
     }
   }
 
@@ -60,34 +133,38 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Lock Icon
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                      color: _isLockedOut
+                          ? Colors.red.withOpacity(0.1)
+                          : Theme.of(context).colorScheme.primary.withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      Icons.lock_outline,
+                      _isLockedOut ? Icons.lock : Icons.lock_outline,
                       size: 64,
-                      color: Theme.of(context).colorScheme.primary,
+                      color: _isLockedOut
+                          ? Colors.red
+                          : Theme.of(context).colorScheme.primary,
                     ),
                   ),
                   const SizedBox(height: 32),
 
-                  // Title
-                  const Text(
-                    'Welcome Back',
+                  Text(
+                    _isLockedOut ? 'Account Locked' : 'Welcome Back',
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
+                      color: _isLockedOut ? Colors.red : null,
                     ),
                   ),
                   const SizedBox(height: 12),
 
-                  // Subtitle
                   Text(
-                    'Enter your PIN to access notes',
+                    _isLockedOut
+                        ? 'Too many failed attempts'
+                        : 'Enter your PIN to access notes',
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.grey.shade600,
@@ -95,7 +172,6 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
                   ),
                   const SizedBox(height: 48),
 
-                  // PIN Input Card
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
@@ -119,6 +195,7 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
                           keyboardType: TextInputType.number,
                           maxLength: 6,
                           textAlign: TextAlign.center,
+                          enabled: !_isLockedOut,
                           style: const TextStyle(
                             fontSize: 24,
                             letterSpacing: 8,
@@ -145,9 +222,12 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
                           const SizedBox(height: 16),
                           Text(
                             _errorMessage,
-                            style: const TextStyle(
-                              color: Colors.red,
+                            style: TextStyle(
+                              color: _isLockedOut ? Colors.orange : Colors.red,
                               fontSize: 14,
+                              fontWeight: _isLockedOut
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -156,16 +236,19 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: _verifyPin,
+                            onPressed: _isLockedOut ? null : _verifyPin,
                             style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            child: const Text(
-                              'Unlock',
-                              style: TextStyle(fontSize: 16),
+                            child: Text(
+                              _isLockedOut
+                                  ? 'Locked ($_remainingSeconds s)'
+                                  : 'Unlock',
+                              style: const TextStyle(fontSize: 16),
                             ),
                           ),
                         ),

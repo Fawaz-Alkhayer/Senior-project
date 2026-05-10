@@ -94,7 +94,7 @@ class DatabaseService {
     // Order by favorite first (DESC = 1 before 0), then by updated date
     const orderBy = 'isFavorite DESC, updatedAt DESC';
     final result = await db.query('notes', orderBy: orderBy);
-    print('📚 Read ${result.length} notes from database');
+    print('Read ${result.length} notes from database');
     return result.map((json) => Note.fromMap(json)).toList();
   }
   
@@ -129,7 +129,7 @@ class DatabaseService {
   // Toggle favorite status
   Future<int> toggleFavorite(int id, bool isFavorite) async {
     final db = await instance.database;
-    print('⭐ Toggling favorite for note ID: $id to $isFavorite');
+    print('Toggling favorite for note ID: $id to $isFavorite');
     return db.update(
       'notes',
       {'isFavorite': isFavorite ? 1 : 0},

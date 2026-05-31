@@ -2,7 +2,7 @@
 ### A Secure Notes App with Biometric Authentication and Local Encrypted Storage
 
 <p align="center">
-  <img src="assets/icon/app_icon.png" alt="SafeNotes Logo" width="120"/>
+  <img src="assets/logo.png" alt="SafeNotes Logo" width="120"/>
 </p>
 
 <p align="center">
